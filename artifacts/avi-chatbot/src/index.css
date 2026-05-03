@@ -242,6 +242,62 @@
   .border-avi-gradient {
     border-image: linear-gradient(to right, #833AB4, #FD1D1D, #FCB045) 1;
   }
+  .avi-border-left {
+    border-left: 3px solid #833AB4;
+  }
+
+  /* AVI response — colorful, bold emphasis */
+  .avi-response strong {
+    color: #833AB4;
+    font-weight: 700;
+  }
+  .avi-response h1,
+  .avi-response h2,
+  .avi-response h3 {
+    color: #833AB4;
+    font-weight: 700;
+  }
+  .avi-response h4,
+  .avi-response h5 {
+    color: #FD1D1D;
+    font-weight: 700;
+  }
+  .avi-response a {
+    color: #833AB4;
+    text-decoration: underline;
+  }
+  .avi-response code {
+    color: #FD1D1D;
+    background: #fff0f0;
+    padding: 1px 5px;
+    border-radius: 4px;
+    font-size: 0.875em;
+  }
+  .avi-response pre {
+    background: #1e1e2e !important;
+    color: #cdd6f4 !important;
+    border-radius: 0.75rem;
+    padding: 1rem;
+  }
+  .avi-response pre code {
+    color: #cdd6f4;
+    background: transparent;
+    padding: 0;
+  }
+  .avi-response ol > li::marker {
+    color: #833AB4;
+    font-weight: 700;
+  }
+  .avi-response ul > li::marker {
+    color: #FD1D1D;
+  }
+  .avi-response blockquote {
+    border-left-color: #FCB045;
+    color: #92400e;
+    background: #fffbeb;
+    border-radius: 0 0.5rem 0.5rem 0;
+    padding: 0.5rem 1rem;
+  }
 
   /* Hide ugly search cancel button in Chrome until we can style it properly */
   input[type="search"]::-webkit-search-cancel-button {

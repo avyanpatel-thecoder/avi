@@ -1,4 +1,3 @@
-import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 
 interface QuickActionsProps {
@@ -18,24 +17,21 @@ const actions = [
 
 export default function QuickActions({ onActionSelect }: QuickActionsProps) {
   return (
-    <div className="w-full relative">
-      <ScrollArea className="w-full whitespace-nowrap">
-        <div className="flex w-max space-x-2 p-1 pb-3">
-          {actions.map((action, idx) => (
-            <Button
-              key={idx}
-              variant="outline"
-              size="sm"
-              className="rounded-full bg-white border-gray-200 text-gray-600 hover:text-primary hover:border-primary hover:bg-primary/5 transition-colors"
-              onClick={() => onActionSelect(action.action)}
-              data-testid={`chip-action-${idx}`}
-            >
-              {action.label}
-            </Button>
-          ))}
-        </div>
-        <ScrollBar orientation="horizontal" className="invisible" />
-      </ScrollArea>
+    <div className="w-full">
+      <div className="flex flex-wrap gap-1.5">
+        {actions.map((action, idx) => (
+          <Button
+            key={idx}
+            variant="outline"
+            size="sm"
+            className="rounded-full h-7 px-3 text-xs font-medium border-purple-200 text-purple-700 bg-purple-50 hover:bg-purple-100 hover:border-purple-400 hover:text-purple-800 transition-colors"
+            onClick={() => onActionSelect(action.action)}
+            data-testid={`chip-action-${idx}`}
+          >
+            {action.label}
+          </Button>
+        ))}
+      </div>
     </div>
   );
 }

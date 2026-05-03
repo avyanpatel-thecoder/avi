@@ -1,5 +1,5 @@
+import aviLogo from "@assets/avi_logo_gradient_refined.jpg_1777827450516.jpg";
 import { Bot, Calculator, BookOpen, Laugh, Plane, Target, Globe, Dices, BookMarked } from "lucide-react";
-import { Card } from "@/components/ui/card";
 
 interface WelcomeScreenProps {
   onSelectAction: (action: string) => void;
@@ -7,91 +7,122 @@ interface WelcomeScreenProps {
 
 const features = [
   {
-    icon: <Bot className="w-6 h-6" />,
+    icon: <Bot className="w-5 h-5" />,
     title: "Tech & Programming",
-    description: "Ask me anything about tech!",
-    action: "Tell me a fun fact about programming!"
+    description: "Ask anything about tech!",
+    action: "Tell me a fun fact about programming!",
+    bg: "bg-purple-50",
+    border: "border-purple-200",
+    iconBg: "bg-purple-100",
+    iconColor: "text-purple-600",
   },
   {
-    icon: <Calculator className="w-6 h-6" />,
+    icon: <Calculator className="w-5 h-5" />,
     title: "Math Problems",
-    description: "I'll solve any math problem step by step",
-    action: "Can you help me solve a math problem?"
+    description: "Solve any math step by step",
+    action: "Can you help me solve a math problem?",
+    bg: "bg-pink-50",
+    border: "border-pink-200",
+    iconBg: "bg-pink-100",
+    iconColor: "text-pink-600",
   },
   {
-    icon: <BookOpen className="w-6 h-6" />,
-    title: "Define Coding Terms",
+    icon: <BookOpen className="w-5 h-5" />,
+    title: "Coding Terms",
     description: "Learn what coding words mean",
-    action: "Define 'recursion' for me."
+    action: "Define 'algorithm' for me.",
+    bg: "bg-orange-50",
+    border: "border-orange-200",
+    iconBg: "bg-orange-100",
+    iconColor: "text-orange-600",
   },
   {
-    icon: <Laugh className="w-6 h-6" />,
+    icon: <Laugh className="w-5 h-5" />,
     title: "Tell a Joke",
-    description: "Need a laugh?",
-    action: "Tell me a joke!"
+    description: "Need a good laugh?",
+    action: "Tell me a joke!",
+    bg: "bg-amber-50",
+    border: "border-amber-200",
+    iconBg: "bg-amber-100",
+    iconColor: "text-amber-600",
   },
   {
-    icon: <Plane className="w-6 h-6" />,
+    icon: <Plane className="w-5 h-5" />,
     title: "Vacation Ideas",
-    description: "Where should I go next?",
-    action: "Give me some cool vacation ideas!"
+    description: "Where should we go next?",
+    action: "Give me some cool vacation ideas for families!",
+    bg: "bg-sky-50",
+    border: "border-sky-200",
+    iconBg: "bg-sky-100",
+    iconColor: "text-sky-600",
   },
   {
-    icon: <Target className="w-6 h-6" />,
+    icon: <Target className="w-5 h-5" />,
     title: "Trivia Game",
     description: "Test your knowledge!",
-    action: "Let's play a trivia game!"
+    action: "Let's play a trivia game!",
+    bg: "bg-green-50",
+    border: "border-green-200",
+    iconBg: "bg-green-100",
+    iconColor: "text-green-600",
   },
   {
-    icon: <Globe className="w-6 h-6" />,
+    icon: <Globe className="w-5 h-5" />,
     title: "Wikipedia Search",
     description: "Search any topic",
-    action: "wikipedia" // Special action handled by parent
+    action: "wikipedia",
+    bg: "bg-indigo-50",
+    border: "border-indigo-200",
+    iconBg: "bg-indigo-100",
+    iconColor: "text-indigo-600",
   },
   {
-    icon: <Dices className="w-6 h-6" />,
-    title: "Random Wikipedia",
-    description: "Discover something new",
-    action: "random_wikipedia" // Special action handled by parent if needed, or just standard prompt
+    icon: <Dices className="w-5 h-5" />,
+    title: "Random Article",
+    description: "Discover something new!",
+    action: "random_wikipedia",
+    bg: "bg-teal-50",
+    border: "border-teal-200",
+    iconBg: "bg-teal-100",
+    iconColor: "text-teal-600",
   },
   {
-    icon: <BookMarked className="w-6 h-6" />,
+    icon: <BookMarked className="w-5 h-5" />,
     title: "Book Suggestions",
     description: "Find your next great read",
-    action: "Can you recommend a good book for a kid?"
-  }
+    action: "Can you recommend a good book for a kid?",
+    bg: "bg-rose-50",
+    border: "border-rose-200",
+    iconBg: "bg-rose-100",
+    iconColor: "text-rose-600",
+  },
 ];
 
 export default function WelcomeScreen({ onSelectAction }: WelcomeScreenProps) {
   return (
-    <div className="flex flex-col items-center justify-center py-12 animate-in fade-in slide-in-from-bottom-4 duration-700">
-      <div className="w-24 h-24 rounded-[2rem] bg-avi-gradient flex items-center justify-center shadow-xl mb-8 transform hover:scale-105 transition-transform duration-300">
-        <span className="text-white font-black text-3xl tracking-wider">AVI</span>
-      </div>
-      
-      <h1 className="text-4xl md:text-5xl font-extrabold text-center text-gray-900 mb-4 tracking-tight">
-        Hi! I'm <span className="text-avi-gradient">AVI</span>
-      </h1>
-      <p className="text-lg md:text-xl text-gray-500 text-center max-w-lg mb-12">
+    <div className="flex flex-col items-center py-4 animate-in fade-in slide-in-from-bottom-4 duration-700">
+      <img src={aviLogo} alt="AVI - Artificial Virtual Intelligence" className="h-28 w-auto mb-3 object-contain" />
+
+      <p className="text-sm text-gray-500 text-center max-w-md mb-5">
         Your super smart, always fun AI best friend. What do you want to explore today?
       </p>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 w-full">
+      <div className="grid grid-cols-3 gap-2 w-full">
         {features.map((feature, idx) => (
-          <Card 
+          <div
             key={idx}
-            className="p-5 flex flex-col gap-3 cursor-pointer hover:shadow-lg hover:border-primary/50 transition-all duration-200 border-2 border-transparent bg-white group rounded-2xl"
+            className={`p-3 flex flex-col gap-2 cursor-pointer rounded-xl border-2 ${feature.bg} ${feature.border} hover:shadow-md hover:scale-[1.02] transition-all duration-200`}
             onClick={() => onSelectAction(feature.action)}
             data-testid={`card-feature-${idx}`}
           >
-            <div className="w-12 h-12 rounded-xl bg-gray-50 flex items-center justify-center text-gray-700 group-hover:text-white group-hover:bg-avi-gradient transition-colors duration-300">
+            <div className={`w-8 h-8 rounded-lg ${feature.iconBg} ${feature.iconColor} flex items-center justify-center flex-shrink-0`}>
               {feature.icon}
             </div>
             <div>
-              <h3 className="font-bold text-gray-900 mb-1">{feature.title}</h3>
-              <p className="text-sm text-gray-500 line-clamp-2">{feature.description}</p>
+              <h3 className="font-bold text-gray-900 text-xs leading-tight mb-0.5">{feature.title}</h3>
+              <p className="text-xs text-gray-500 line-clamp-1 leading-tight">{feature.description}</p>
             </div>
-          </Card>
+          </div>
         ))}
       </div>
     </div>
