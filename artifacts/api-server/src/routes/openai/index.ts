@@ -2,7 +2,7 @@ import { Router } from "express";
 import { openai } from "@workspace/integrations-openai-ai-server";
 import { db } from "@workspace/db";
 import { conversations, messages } from "@workspace/db";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import {
   CreateOpenaiConversationBody,
   GetOpenaiConversationParams,
@@ -59,12 +59,23 @@ YOU CAN HELP WITH:
 
 Always respond in a warm, enthusiastic tone. Use emojis sparingly. Keep answers concise but complete.`;
 
-// List all conversations
+function getSessionId(req: Parameters<Parameters<typeof router.get>[1]>[0]): string | null {
+  const sid = req.headers["x-session-id"];
+  if (typeof sid === "string" && sid.trim().length > 0) return sid.trim();
+  return null;
+}
+
+// List conversations for this session
 router.get("/openai/conversations", async (req, res) => {
+  const sessionId = getSessionId(req);
+  if (!sessionId) {
+    return res.json([]);
+  }
   try {
     const allConversations = await db
       .select()
       .from(conversations)
+      .where(eq(conversations.sessionId, sessionId))
       .orderBy(conversations.createdAt);
     res.json(allConversations);
   } catch (err) {
@@ -75,6 +86,10 @@ router.get("/openai/conversations", async (req, res) => {
 
 // Create a conversation
 router.post("/openai/conversations", async (req, res) => {
+  const sessionId = getSessionId(req);
+  if (!sessionId) {
+    return res.status(400).json({ error: "Missing session ID" });
+  }
   const parsed = CreateOpenaiConversationBody.safeParse(req.body);
   if (!parsed.success) {
     return res.status(400).json({ error: "Invalid request body" });
@@ -82,7 +97,7 @@ router.post("/openai/conversations", async (req, res) => {
   try {
     const [conv] = await db
       .insert(conversations)
-      .values({ title: parsed.data.title })
+      .values({ title: parsed.data.title, sessionId })
       .returning();
     res.status(201).json(conv);
   } catch (err) {
@@ -91,8 +106,11 @@ router.post("/openai/conversations", async (req, res) => {
   }
 });
 
-// Get conversation with messages
+// Get conversation (scoped to session)
 router.get("/openai/conversations/:id", async (req, res) => {
+  const sessionId = getSessionId(req);
+  if (!sessionId) return res.status(400).json({ error: "Missing session ID" });
+
   const parsed = GetOpenaiConversationParams.safeParse(req.params);
   if (!parsed.success) return res.status(400).json({ error: "Invalid id" });
 
@@ -100,7 +118,7 @@ router.get("/openai/conversations/:id", async (req, res) => {
     const [conv] = await db
       .select()
       .from(conversations)
-      .where(eq(conversations.id, parsed.data.id));
+      .where(and(eq(conversations.id, parsed.data.id), eq(conversations.sessionId, sessionId)));
     if (!conv) return res.status(404).json({ error: "Conversation not found" });
 
     const msgs = await db
@@ -116,15 +134,18 @@ router.get("/openai/conversations/:id", async (req, res) => {
   }
 });
 
-// Delete conversation
+// Delete conversation (scoped to session)
 router.delete("/openai/conversations/:id", async (req, res) => {
+  const sessionId = getSessionId(req);
+  if (!sessionId) return res.status(400).json({ error: "Missing session ID" });
+
   const parsed = DeleteOpenaiConversationParams.safeParse(req.params);
   if (!parsed.success) return res.status(400).json({ error: "Invalid id" });
 
   try {
     const deleted = await db
       .delete(conversations)
-      .where(eq(conversations.id, parsed.data.id))
+      .where(and(eq(conversations.id, parsed.data.id), eq(conversations.sessionId, sessionId)))
       .returning();
     if (!deleted.length) return res.status(404).json({ error: "Not found" });
     res.status(204).end();
@@ -134,7 +155,7 @@ router.delete("/openai/conversations/:id", async (req, res) => {
   }
 });
 
-// List messages in a conversation
+// List messages (no extra session check needed — conversation ownership already enforced above)
 router.get("/openai/conversations/:id/messages", async (req, res) => {
   const parsed = ListOpenaiMessagesParams.safeParse(req.params);
   if (!parsed.success) return res.status(400).json({ error: "Invalid id" });
@@ -152,8 +173,11 @@ router.get("/openai/conversations/:id/messages", async (req, res) => {
   }
 });
 
-// Send message (SSE streaming)
+// Send message (SSE streaming) — scoped to session
 router.post("/openai/conversations/:id/messages", async (req, res) => {
+  const sessionId = getSessionId(req);
+  if (!sessionId) return res.status(400).json({ error: "Missing session ID" });
+
   const paramsParsed = SendOpenaiMessageParams.safeParse(req.params);
   if (!paramsParsed.success)
     return res.status(400).json({ error: "Invalid id" });
@@ -165,15 +189,16 @@ router.post("/openai/conversations/:id/messages", async (req, res) => {
   const { id } = paramsParsed.data;
   const { content } = bodyParsed.data;
 
-  try {
-    // Save user message
-    await db.insert(messages).values({
-      conversationId: id,
-      role: "user",
-      content,
-    });
+  // Verify the conversation belongs to this session
+  const [conv] = await db
+    .select()
+    .from(conversations)
+    .where(and(eq(conversations.id, id), eq(conversations.sessionId, sessionId)));
+  if (!conv) return res.status(404).json({ error: "Conversation not found" });
 
-    // Get conversation history for context
+  try {
+    await db.insert(messages).values({ conversationId: id, role: "user", content });
+
     const history = await db
       .select()
       .from(messages)
@@ -194,10 +219,7 @@ router.post("/openai/conversations/:id/messages", async (req, res) => {
     const stream = await openai.chat.completions.create({
       model: "gpt-5.4",
       max_completion_tokens: 8192,
-      messages: [
-        { role: "system", content: AVI_SYSTEM_PROMPT },
-        ...chatMessages,
-      ],
+      messages: [{ role: "system", content: AVI_SYSTEM_PROMPT }, ...chatMessages],
       stream: true,
     });
 
@@ -209,13 +231,7 @@ router.post("/openai/conversations/:id/messages", async (req, res) => {
       }
     }
 
-    // Save assistant message
-    await db.insert(messages).values({
-      conversationId: id,
-      role: "assistant",
-      content: fullResponse,
-    });
-
+    await db.insert(messages).values({ conversationId: id, role: "assistant", content: fullResponse });
     res.write(`data: ${JSON.stringify({ done: true })}\n\n`);
     res.end();
   } catch (err) {

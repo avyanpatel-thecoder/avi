@@ -17,6 +17,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Send, Loader2, Clock, LayoutGrid } from "lucide-react";
 import WikipediaModal from "@/components/wikipedia-modal";
+import { getSessionId } from "@/lib/session";
 
 export default function ChatPage() {
   const queryClient = useQueryClient();
@@ -98,7 +99,10 @@ export default function ChatPage() {
         `${BASE}api/openai/conversations/${currentConvId}/messages`,
         {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+            "X-Session-Id": getSessionId(),
+          },
           body: JSON.stringify({ content }),
         }
       );

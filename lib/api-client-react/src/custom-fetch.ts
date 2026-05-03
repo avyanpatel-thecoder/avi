@@ -17,6 +17,7 @@ const DEFAULT_JSON_ACCEPT = "application/json, application/problem+json";
 
 let _baseUrl: string | null = null;
 let _authTokenGetter: AuthTokenGetter | null = null;
+let _sessionIdGetter: (() => string | null) | null = null;
 
 /**
  * Set a base URL that is prepended to every relative request URL
@@ -27,6 +28,15 @@ let _authTokenGetter: AuthTokenGetter | null = null;
  */
 export function setBaseUrl(url: string | null): void {
   _baseUrl = url ? url.replace(/\/+$/, "") : null;
+}
+
+/**
+ * Register a getter that supplies a session ID. Before every fetch the getter
+ * is invoked; when it returns a non-null string, an `X-Session-Id` header is
+ * attached to the request. Used to scope data per anonymous browser session.
+ */
+export function setSessionIdGetter(getter: (() => string | null) | null): void {
+  _sessionIdGetter = getter;
 }
 
 /**
@@ -347,6 +357,14 @@ export async function customFetch<T = unknown>(
 
   if (responseType === "json" && !headers.has("accept")) {
     headers.set("accept", DEFAULT_JSON_ACCEPT);
+  }
+
+  // Attach session ID when a getter is configured.
+  if (_sessionIdGetter && !headers.has("x-session-id")) {
+    const sid = _sessionIdGetter();
+    if (sid) {
+      headers.set("x-session-id", sid);
+    }
   }
 
   // Attach bearer token when an auth getter is configured and no
