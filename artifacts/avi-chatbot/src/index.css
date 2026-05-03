@@ -233,6 +233,9 @@
   .bg-avi-gradient {
     background: linear-gradient(to right, #833AB4, #FD1D1D, #FCB045);
   }
+  .bg-avi-gradient-light {
+    background: linear-gradient(to right, #B589D2, #F87878, #FDC868);
+  }
   .text-avi-gradient {
     background: linear-gradient(to right, #833AB4, #FD1D1D, #FCB045);
     -webkit-background-clip: text;

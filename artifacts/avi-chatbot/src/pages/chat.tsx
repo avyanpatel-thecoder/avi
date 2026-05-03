@@ -1,21 +1,32 @@
 import { useQueryClient } from "@tanstack/react-query";
-import { useListOpenaiConversations, useCreateOpenaiConversation, useListOpenaiMessages, getListOpenaiConversationsQueryKey, getListOpenaiMessagesQueryKey, getGetOpenaiConversationQueryKey, OpenaiMessage } from "@workspace/api-client-react";
+import {
+  useListOpenaiConversations,
+  useCreateOpenaiConversation,
+  useListOpenaiMessages,
+  getListOpenaiConversationsQueryKey,
+  getListOpenaiMessagesQueryKey,
+  getGetOpenaiConversationQueryKey,
+  OpenaiMessage,
+} from "@workspace/api-client-react";
 import { useState, useRef, useEffect } from "react";
 import WelcomeScreen from "@/components/welcome-screen";
 import ChatMessage from "@/components/chat-message";
 import QuickActions from "@/components/quick-actions";
+import HistoryPanel from "@/components/history-panel";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Send, Loader2 } from "lucide-react";
+import { Send, Loader2, Clock, LayoutGrid } from "lucide-react";
 import WikipediaModal from "@/components/wikipedia-modal";
-import aviLogo from "@assets/avi_logo_gradient_refined.jpg_1777827450516.jpg";
 
 export default function ChatPage() {
   const queryClient = useQueryClient();
-  const { data: conversations = [], isLoading: loadingConversations } = useListOpenaiConversations();
+  const { data: conversations = [], isLoading: loadingConversations } =
+    useListOpenaiConversations();
   const createConversation = useCreateOpenaiConversation();
 
   const [activeConversationId, setActiveConversationId] = useState<number | null>(null);
+  const [showWelcome, setShowWelcome] = useState(false);
+  const [showHistory, setShowHistory] = useState(false);
 
   useEffect(() => {
     if (conversations.length > 0 && !activeConversationId) {
@@ -23,12 +34,15 @@ export default function ChatPage() {
     }
   }, [conversations, activeConversationId]);
 
-  const { data: messages = [], isLoading: loadingMessages } = useListOpenaiMessages(activeConversationId || 0, {
-    query: {
-      enabled: !!activeConversationId,
-      queryKey: getListOpenaiMessagesQueryKey(activeConversationId || 0),
-    },
-  });
+  const { data: messages = [] } = useListOpenaiMessages(
+    activeConversationId || 0,
+    {
+      query: {
+        enabled: !!activeConversationId,
+        queryKey: getListOpenaiMessagesQueryKey(activeConversationId || 0),
+      },
+    }
+  );
 
   const [inputMessage, setInputMessage] = useState("");
   const [isStreaming, setIsStreaming] = useState(false);
@@ -47,6 +61,7 @@ export default function ChatPage() {
   const handleSendMessage = async (content: string) => {
     if (!content.trim()) return;
 
+    setShowWelcome(false);
     setInputMessage("");
     setIsStreaming(true);
     setStreamingContent("");
@@ -54,31 +69,39 @@ export default function ChatPage() {
     let currentConvId = activeConversationId;
 
     if (!currentConvId) {
-      const newConv = await createConversation.mutateAsync({ data: { title: "New Chat" } });
+      const newConv = await createConversation.mutateAsync({
+        data: { title: "New Chat" },
+      });
       currentConvId = newConv.id;
       setActiveConversationId(newConv.id);
-      queryClient.invalidateQueries({ queryKey: getListOpenaiConversationsQueryKey() });
+      queryClient.invalidateQueries({
+        queryKey: getListOpenaiConversationsQueryKey(),
+      });
     }
 
     const userMessage: OpenaiMessage = {
       id: Date.now(),
       conversationId: currentConvId,
       role: "user",
-      content: content,
+      content,
       createdAt: new Date().toISOString(),
     };
 
-    queryClient.setQueryData(getListOpenaiMessagesQueryKey(currentConvId), (old: OpenaiMessage[] | undefined) => {
-      return [...(old || []), userMessage];
-    });
+    queryClient.setQueryData(
+      getListOpenaiMessagesQueryKey(currentConvId),
+      (old: OpenaiMessage[] | undefined) => [...(old || []), userMessage]
+    );
 
     try {
       const BASE = import.meta.env.BASE_URL;
-      const response = await fetch(`${BASE}api/openai/conversations/${currentConvId}/messages`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ content }),
-      });
+      const response = await fetch(
+        `${BASE}api/openai/conversations/${currentConvId}/messages`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ content }),
+        }
+      );
 
       const reader = response.body?.getReader();
       const decoder = new TextDecoder();
@@ -90,32 +113,35 @@ export default function ChatPage() {
           if (done) break;
 
           const chunk = decoder.decode(value, { stream: true });
-          const lines = chunk.split("\n").filter((line) => line.trim().startsWith("data: "));
+          const lines = chunk
+            .split("\n")
+            .filter((line) => line.trim().startsWith("data: "));
 
           for (const line of lines) {
             const dataStr = line.replace(/^data: /, "").trim();
             if (dataStr === "[DONE]") continue;
-
             try {
               const data = JSON.parse(dataStr);
               if (data.content) {
                 accumulatedContent += data.content;
                 setStreamingContent(accumulatedContent);
               }
-              if (data.done) {
-                break;
-              }
-            } catch (e) {
+              if (data.done) break;
+            } catch {
               // ignore parse errors
             }
           }
         }
       }
 
-      queryClient.invalidateQueries({ queryKey: getListOpenaiMessagesQueryKey(currentConvId) });
-      queryClient.invalidateQueries({ queryKey: getGetOpenaiConversationQueryKey(currentConvId) });
-    } catch (error) {
-      // ignore
+      queryClient.invalidateQueries({
+        queryKey: getListOpenaiMessagesQueryKey(currentConvId),
+      });
+      queryClient.invalidateQueries({
+        queryKey: getGetOpenaiConversationQueryKey(currentConvId),
+      });
+    } catch {
+      // ignore network errors
     } finally {
       setIsStreaming(false);
       setStreamingContent("");
@@ -132,12 +158,28 @@ export default function ChatPage() {
   const handleQuickAction = (action: string) => {
     if (action === "wikipedia") {
       setIsWikiModalOpen(true);
-    } else if (action === "random_wikipedia" || action === "Tell me about a random Wikipedia article") {
+    } else if (
+      action === "random_wikipedia" ||
+      action === "Tell me about a random Wikipedia article"
+    ) {
       handleSendMessage("Tell me about a random Wikipedia article!");
     } else {
       handleSendMessage(action);
     }
   };
+
+  const handleNewChat = () => {
+    setActiveConversationId(null);
+    setShowWelcome(true);
+  };
+
+  const handleSelectConversation = (id: number) => {
+    setActiveConversationId(id);
+    setShowWelcome(false);
+  };
+
+  const isInConversation =
+    !showWelcome && !!activeConversationId && messages.length > 0;
 
   if (loadingConversations) {
     return (
@@ -149,20 +191,49 @@ export default function ChatPage() {
 
   return (
     <div className="flex flex-col h-screen bg-gray-50/60">
-      <header className="flex items-center px-5 py-3 bg-avi-gradient sticky top-0 z-10 shadow-md">
+      {/* ── Header ── */}
+      <header className="flex items-center justify-between px-5 py-3 bg-avi-gradient-light sticky top-0 z-10 shadow-sm">
         <div className="flex items-center gap-3">
-          <div className="bg-white rounded-xl p-1 shadow-sm">
-            <img src={aviLogo} alt="AVI" className="h-8 w-auto object-contain" />
+          <div className="w-10 h-10 rounded-xl bg-white/25 border-2 border-white/60 flex items-center justify-center flex-shrink-0">
+            <span className="text-white font-black text-sm tracking-widest drop-shadow">AVI</span>
           </div>
           <div>
-            <p className="text-white/80 text-xs font-medium tracking-wide">Your AI Best Friend</p>
+            <h1 className="text-white font-bold text-sm leading-tight tracking-wide">
+              AVI - Artificial Virtual Intelligence
+            </h1>
           </div>
+        </div>
+
+        <div className="flex items-center gap-1">
+          {isInConversation && (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setShowWelcome(true)}
+              className="text-white hover:bg-white/25 rounded-xl h-9 w-9"
+              title="Main Menu"
+              data-testid="button-main-menu"
+            >
+              <LayoutGrid className="h-5 w-5" />
+            </Button>
+          )}
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setShowHistory(true)}
+            className="text-white hover:bg-white/25 rounded-xl h-9 w-9"
+            title="Chat History"
+            data-testid="button-history"
+          >
+            <Clock className="h-5 w-5" />
+          </Button>
         </div>
       </header>
 
+      {/* ── Main content ── */}
       <main className="flex-1 overflow-y-auto p-4 md:p-6">
         <div className="max-w-3xl mx-auto flex flex-col gap-5">
-          {!activeConversationId || messages.length === 0 ? (
+          {showWelcome || !activeConversationId || messages.length === 0 ? (
             <WelcomeScreen onSelectAction={handleQuickAction} />
           ) : (
             <div className="flex flex-col gap-5">
@@ -192,6 +263,7 @@ export default function ChatPage() {
         </div>
       </main>
 
+      {/* ── Footer ── */}
       <footer className="p-3 md:p-4 bg-white border-t sticky bottom-0 z-10">
         <div className="max-w-3xl mx-auto flex flex-col gap-2.5">
           <QuickActions onActionSelect={handleQuickAction} />
@@ -216,13 +288,27 @@ export default function ChatPage() {
               <Send className="h-4 w-4 text-white" />
             </Button>
           </div>
+
+          <p className="text-center text-[10px] text-gray-400 leading-tight">
+            Powered by Artificial Virtual Intelligence. All rights reserved 2026
+          </p>
         </div>
       </footer>
 
+      {/* ── Modals ── */}
       <WikipediaModal
         isOpen={isWikiModalOpen}
         onClose={() => setIsWikiModalOpen(false)}
         onInsert={(content) => handleSendMessage(`Tell me about: ${content}`)}
+      />
+
+      <HistoryPanel
+        isOpen={showHistory}
+        onClose={() => setShowHistory(false)}
+        conversations={conversations}
+        activeConversationId={activeConversationId}
+        onSelectConversation={handleSelectConversation}
+        onNewChat={handleNewChat}
       />
     </div>
   );
