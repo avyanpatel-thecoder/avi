@@ -15,6 +15,25 @@ pnpm workspace monorepo using TypeScript. Each package manages its own dependenc
 - **Validation**: Zod (`zod/v4`), `drizzle-zod`
 - **API codegen**: Orval (from OpenAPI spec)
 - **Build**: esbuild (CJS bundle)
+- **AI**: OpenAI via Replit AI Integrations (gpt-5.4)
+
+## Artifacts
+
+- **AVI Chatbot** (`artifacts/avi-chatbot`) — Kid-friendly AI chatbot at `/`
+- **API Server** (`artifacts/api-server`) — Express backend at `/api`
+- **Canvas** (`artifacts/mockup-sandbox`) — Design sandbox at `/__mockup`
+
+## AVI Chatbot Features
+- Tech & programming Q&A
+- Math problem solving
+- Coding term definitions
+- Jokes
+- Vacation suggestions
+- Trivia game
+- Wikipedia search (`search <topic>`)
+- Random Wikipedia article on a topic
+- Book recommendations by age and topic
+- Kid-friendly content filtering via system prompt
 
 ## Key Commands
 
@@ -23,5 +42,15 @@ pnpm workspace monorepo using TypeScript. Each package manages its own dependenc
 - `pnpm --filter @workspace/api-spec run codegen` — regenerate API hooks and Zod schemas from OpenAPI spec
 - `pnpm --filter @workspace/db run push` — push DB schema changes (dev only)
 - `pnpm --filter @workspace/api-server run dev` — run API server locally
+
+## Database Schema
+- `conversations` — chat conversation sessions
+- `messages` — individual chat messages (role: user | assistant)
+
+## Notes
+- OpenAI integration uses Replit AI Integrations proxy (no API key needed from user)
+- Wikipedia routes use public Wikipedia REST API (no auth needed)
+- The codegen script patches `lib/api-zod/src/index.ts` after orval runs to avoid duplicate export conflicts
+- AVI system prompt enforces kid-friendly responses and redirects inappropriate queries
 
 See the `pnpm-workspace` skill for workspace structure, TypeScript setup, and package details.

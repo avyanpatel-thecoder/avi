@@ -1,0 +1,31 @@
+kind = "web"
+previewPath = "/"
+title = "AVI - Artificial Virtual Intelligence"
+version = "1.0.0"
+id = "artifacts/avi-chatbot"
+router = "path"
+
+[[integratedSkills]]
+name = "react-vite"
+version = "1.0.0"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 23149
+
+[services.development]
+run = "pnpm --filter @workspace/avi-chatbot run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/avi-chatbot", "run", "build" ]
+publicDir = "artifacts/avi-chatbot/dist/public"
+serve = "static"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "23149"
+BASE_PATH = "/"
