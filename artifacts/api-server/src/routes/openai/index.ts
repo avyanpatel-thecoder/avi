@@ -219,13 +219,7 @@ router.post("/openai/conversations/:id/messages", async (req, res) => {
       content: m.content,
     }));
 
-    // Build system prompt — prepend theme instruction if a theme is active
-    const themeHeader = req.headers["x-theme"];
-    const themeKey = typeof themeHeader === "string" ? themeHeader.trim() : "";
-    const themeInstruction = themeKey && THEME_INSTRUCTIONS[themeKey]
-      ? `${THEME_INSTRUCTIONS[themeKey]}\n\n`
-      : "";
-    const systemContent = `${themeInstruction}${AVI_SYSTEM_PROMPT}`;
+    const systemContent = AVI_SYSTEM_PROMPT;
 
     res.setHeader("Content-Type", "text/event-stream");
     res.setHeader("Cache-Control", "no-cache");
