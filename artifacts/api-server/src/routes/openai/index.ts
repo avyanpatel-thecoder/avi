@@ -14,6 +14,15 @@ import {
 
 const router = Router();
 
+const THEME_INSTRUCTIONS: Record<string, string> = {
+  magic: "THEME MODE — MAGIC ACADEMY: Respond like a friendly wise wizard mentor! Use magical expressions like 'Splendid spell!' or 'By the stars!', reference potions, spells, and magical creatures. Make every answer feel enchanted and wondrous! ✨",
+  space: "THEME MODE — SPACE EXPLORER: Respond like a friendly astronaut on a cosmic mission! Use space-mission language like 'Mission accomplished!' or 'Houston, we have an answer!', reference planets, galaxies, and cosmic adventures. Make everything feel like a thrilling space mission! 🚀",
+  monster: "THEME MODE — MONSTER TRAINER: Respond like an enthusiastic creature trainer on epic quests! Use trainer language like 'Level up!' or 'Critical hit of knowledge!', reference training, evolution, and legendary adventures. Make everything feel like an epic quest! ⚡",
+  silly: "THEME MODE — SILLY HELPERS: Be super goofy and hilarious! Use silly sounds like 'BELLO!' or 'Whaaat?!', love bananas, use funny words and random silliness. Make kids laugh while they learn! 🍌",
+  jungle: "THEME MODE — JUNGLE EXPLORER: Respond like an adventurous wildlife expert on safari! Use nature expressions like 'Extraordinary find!' or 'In the wild...', reference animals, ecosystems, and jungle expeditions. Make every answer feel like discovering hidden treasure! 🦁",
+  ocean: "THEME MODE — OCEAN ADVENTURE: Respond like a friendly marine biologist on an underwater expedition! Use ocean language like 'Deep-sea discovery!' or 'Dive deeper!', reference sea creatures, coral reefs, and oceanic wonders. Make everything feel like exploring the magical deep sea! 🌊",
+};
+
 const AVI_SYSTEM_PROMPT = `You are AVI (Artificial Virtual Intelligence), a friendly and helpful AI assistant for kids and young learners. You are enthusiastic, encouraging, and always keep responses kid-friendly.
 
 IMPORTANT RULES:
@@ -210,6 +219,14 @@ router.post("/openai/conversations/:id/messages", async (req, res) => {
       content: m.content,
     }));
 
+    // Build system prompt — prepend theme instruction if a theme is active
+    const themeHeader = req.headers["x-theme"];
+    const themeKey = typeof themeHeader === "string" ? themeHeader.trim() : "";
+    const themeInstruction = themeKey && THEME_INSTRUCTIONS[themeKey]
+      ? `${THEME_INSTRUCTIONS[themeKey]}\n\n`
+      : "";
+    const systemContent = `${themeInstruction}${AVI_SYSTEM_PROMPT}`;
+
     res.setHeader("Content-Type", "text/event-stream");
     res.setHeader("Cache-Control", "no-cache");
     res.setHeader("Connection", "keep-alive");
@@ -219,7 +236,7 @@ router.post("/openai/conversations/:id/messages", async (req, res) => {
     const stream = await openai.chat.completions.create({
       model: "gpt-4o-mini",
       max_completion_tokens: 8192,
-      messages: [{ role: "system", content: AVI_SYSTEM_PROMPT }, ...chatMessages],
+      messages: [{ role: "system", content: systemContent }, ...chatMessages],
       stream: true,
     });
 

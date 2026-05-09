@@ -2,11 +2,13 @@ import { OpenaiMessage } from "@workspace/api-client-react";
 import { cn } from "@/lib/utils";
 import { Loader2 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
+import { motion } from "framer-motion";
 
 interface ChatMessageProps {
   message: OpenaiMessage;
   isStreaming?: boolean;
   onOptionClick?: (value: string) => void;
+  index?: number;
 }
 
 interface ExtractedOption {
@@ -65,21 +67,40 @@ const optionColors = [
   "bg-sky-50 border-sky-300 text-sky-800 hover:bg-sky-100",
 ];
 
-export default function ChatMessage({ message, isStreaming = false, onOptionClick }: ChatMessageProps) {
+export default function ChatMessage({
+  message,
+  isStreaming = false,
+  onOptionClick,
+  index = 0,
+}: ChatMessageProps) {
   const isUser = message.role === "user";
   const { body, options } = isUser || isStreaming
     ? { body: message.content, options: [] }
     : extractOptions(message.content);
 
   return (
-    <div className={cn("flex w-full", isUser ? "justify-end" : "justify-start")}>
+    <motion.div
+      className={cn("flex w-full", isUser ? "justify-end" : "justify-start")}
+      initial={{ opacity: 0, y: 18, scale: 0.97 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      transition={{
+        type: "spring",
+        stiffness: isUser ? 280 : 200,
+        damping: isUser ? 24 : 18,
+        delay: isStreaming ? 0 : Math.min(index * 0.04, 0.3),
+      }}
+    >
       <div className={cn("flex max-w-[88%] md:max-w-[78%] gap-2.5", isUser ? "flex-row-reverse" : "flex-row")}>
 
         {!isUser && (
           <div className="flex-shrink-0 mt-1">
-            <div className="w-9 h-9 rounded-full bg-avi-gradient flex items-center justify-center text-white font-bold shadow-sm text-xs">
+            <motion.div
+              className="w-9 h-9 rounded-full bg-avi-gradient flex items-center justify-center text-white font-bold shadow-sm text-xs"
+              animate={isStreaming ? { scale: [1, 1.12, 1] } : {}}
+              transition={isStreaming ? { duration: 1.2, repeat: Infinity, ease: "easeInOut" } : {}}
+            >
               AVI
-            </div>
+            </motion.div>
           </div>
         )}
 
@@ -89,7 +110,7 @@ export default function ChatMessage({ message, isStreaming = false, onOptionClic
               "rounded-2xl px-4 py-3 shadow-sm text-[14px] leading-relaxed",
               isUser
                 ? "bg-gradient-to-br from-purple-100 to-pink-100 text-gray-900 rounded-tr-sm border border-purple-200"
-                : "bg-white border border-gray-100 text-gray-800 rounded-tl-sm avi-border-left"
+                : "bg-white/90 border border-gray-100 text-gray-800 rounded-tl-sm avi-border-left backdrop-blur-sm"
             )}
           >
             {isStreaming && message.content === "" ? (
@@ -108,24 +129,34 @@ export default function ChatMessage({ message, isStreaming = false, onOptionClic
           </div>
 
           {options.length > 0 && onOptionClick && (
-            <div className="flex flex-wrap gap-1.5 pl-1">
+            <motion.div
+              className="flex flex-wrap gap-1.5 pl-1"
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.15, type: "spring", stiffness: 200 }}
+            >
               {options.map((opt, idx) => (
-                <button
+                <motion.button
                   key={idx}
                   onClick={() => onOptionClick(opt.value)}
                   className={cn(
-                    "text-xs font-semibold px-3 py-1.5 rounded-full border-2 transition-all duration-150 cursor-pointer hover:scale-105 active:scale-95",
+                    "text-xs font-semibold px-3 py-1.5 rounded-full border-2 transition-colors duration-150 cursor-pointer",
                     optionColors[idx % optionColors.length]
                   )}
+                  whileHover={{ scale: 1.08, y: -2 }}
+                  whileTap={{ scale: 0.94 }}
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: 0.18 + idx * 0.06, type: "spring", stiffness: 260 }}
                   data-testid={`option-btn-${idx}`}
                 >
                   {opt.label}
-                </button>
+                </motion.button>
               ))}
-            </div>
+            </motion.div>
           )}
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 }

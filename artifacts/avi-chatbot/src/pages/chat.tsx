@@ -13,11 +13,14 @@ import WelcomeScreen from "@/components/welcome-screen";
 import ChatMessage from "@/components/chat-message";
 import QuickActions from "@/components/quick-actions";
 import HistoryPanel from "@/components/history-panel";
+import ThemePicker from "@/components/theme-picker";
+import ThemeBackground from "@/components/theme-background";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Send, Loader2, Clock, LayoutGrid } from "lucide-react";
+import { Send, Loader2, Clock, LayoutGrid, Palette } from "lucide-react";
 import WikipediaModal from "@/components/wikipedia-modal";
 import { getSessionId } from "@/lib/session";
+import { ThemeId, getTheme, saveConvTheme, loadConvTheme } from "@/lib/themes";
 
 export default function ChatPage() {
   const queryClient = useQueryClient();
@@ -28,12 +31,35 @@ export default function ChatPage() {
   const [activeConversationId, setActiveConversationId] = useState<number | null>(null);
   const [showWelcome, setShowWelcome] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
+  const [showThemePicker, setShowThemePicker] = useState(false);
+  const [selectedTheme, setSelectedTheme] = useState<ThemeId | null>(null);
 
+  // Ref to prevent auto-selection when user explicitly starts a new chat
+  const newChatMode = useRef(false);
+
+  // On first load: auto-select most recent conversation or show theme picker
   useEffect(() => {
-    if (conversations.length > 0 && !activeConversationId) {
-      setActiveConversationId(conversations[0].id);
+    if (loadingConversations) return;
+    if (newChatMode.current) return;
+    if (activeConversationId) return;
+
+    if (conversations.length > 0) {
+      const first = conversations[0];
+      setActiveConversationId(first.id);
+      setSelectedTheme(loadConvTheme(first.id));
+      setShowWelcome(false);
+    } else {
+      // No conversations yet — show theme picker
+      setShowThemePicker(true);
     }
-  }, [conversations, activeConversationId]);
+  }, [loadingConversations, conversations]); // eslint-disable-line
+
+  // When active conversation changes from history selection, load its theme
+  useEffect(() => {
+    if (activeConversationId) {
+      setSelectedTheme(loadConvTheme(activeConversationId));
+    }
+  }, [activeConversationId]);
 
   const { data: messages = [] } = useListOpenaiMessages(
     activeConversationId || 0,
@@ -63,6 +89,7 @@ export default function ChatPage() {
     if (!content.trim()) return;
 
     setShowWelcome(false);
+    setShowThemePicker(false);
     setInputMessage("");
     setIsStreaming(true);
     setStreamingContent("");
@@ -71,10 +98,17 @@ export default function ChatPage() {
 
     if (!currentConvId) {
       const newConv = await createConversation.mutateAsync({
-        data: { title: "New Chat" },
+        data: { title: content.slice(0, 60) || "New Chat" },
       });
       currentConvId = newConv.id;
+      newChatMode.current = false;
       setActiveConversationId(newConv.id);
+
+      // Persist theme for this conversation
+      if (selectedTheme) {
+        saveConvTheme(newConv.id, selectedTheme);
+      }
+
       queryClient.invalidateQueries({
         queryKey: getListOpenaiConversationsQueryKey(),
       });
@@ -95,16 +129,15 @@ export default function ChatPage() {
 
     try {
       const BASE = import.meta.env.BASE_URL;
+      const headers: Record<string, string> = {
+        "Content-Type": "application/json",
+        "X-Session-Id": getSessionId(),
+      };
+      if (selectedTheme) headers["X-Theme"] = selectedTheme;
+
       const response = await fetch(
         `${BASE}api/openai/conversations/${currentConvId}/messages`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "X-Session-Id": getSessionId(),
-          },
-          body: JSON.stringify({ content }),
-        }
+        { method: "POST", headers, body: JSON.stringify({ content }) }
       );
 
       const reader = response.body?.getReader();
@@ -173,17 +206,32 @@ export default function ChatPage() {
   };
 
   const handleNewChat = () => {
+    newChatMode.current = true;
     setActiveConversationId(null);
-    setShowWelcome(true);
+    setSelectedTheme(null);
+    setShowWelcome(false);
+    setShowHistory(false);
+    setShowThemePicker(true);
   };
 
   const handleSelectConversation = (id: number) => {
+    newChatMode.current = false;
     setActiveConversationId(id);
     setShowWelcome(false);
+    setShowThemePicker(false);
+    setSelectedTheme(loadConvTheme(id));
   };
 
+  const handleThemeSelected = (themeId: ThemeId) => {
+    setSelectedTheme(themeId);
+    setShowThemePicker(false);
+    setShowWelcome(true);
+  };
+
+  const activeTheme = getTheme(selectedTheme);
+
   const isInConversation =
-    !showWelcome && !!activeConversationId && messages.length > 0;
+    !showWelcome && !showThemePicker && !!activeConversationId && messages.length > 0;
 
   if (loadingConversations) {
     return (
@@ -194,17 +242,39 @@ export default function ChatPage() {
   }
 
   return (
-    <div className="flex flex-col h-screen bg-gray-50/60">
+    <div
+      className="flex flex-col h-screen relative"
+      style={
+        activeTheme
+          ? { background: `linear-gradient(135deg, var(--theme-bg-start, #f9fafb), var(--theme-bg-end, #f3f4f6))` }
+          : { background: "#f9fafb" }
+      }
+    >
+      {/* Animated theme background */}
+      {selectedTheme && <ThemeBackground themeId={selectedTheme} />}
+
       {/* ── Header ── */}
-      <header className="flex items-center justify-between px-5 py-3 bg-avi-gradient-light sticky top-0 z-10 shadow-sm">
+      <header
+        className="flex items-center justify-between px-5 py-3 sticky top-0 z-10 shadow-sm"
+        style={
+          activeTheme
+            ? { background: activeTheme.headerGradient }
+            : { background: "linear-gradient(135deg, #833AB4, #FD1D1D, #FCB045)" }
+        }
+      >
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-white/25 border-2 border-white/60 flex items-center justify-center flex-shrink-0">
-            <span className="text-white font-black text-sm tracking-widest drop-shadow">AVI</span>
+            <span className="text-white font-black text-sm tracking-widest drop-shadow">
+              {activeTheme ? activeTheme.emoji : "AVI"}
+            </span>
           </div>
           <div>
             <h1 className="text-white font-bold text-sm leading-tight tracking-wide">
               AVI - Artificial Virtual Intelligence
             </h1>
+            {activeTheme && (
+              <p className="text-white/70 text-[11px] leading-tight">{activeTheme.name} mode</p>
+            )}
           </div>
         </div>
 
@@ -224,6 +294,15 @@ export default function ChatPage() {
           <Button
             variant="ghost"
             size="icon"
+            onClick={handleNewChat}
+            className="text-white hover:bg-white/25 rounded-xl h-9 w-9"
+            title="Change Theme / New Chat"
+          >
+            <Palette className="h-5 w-5" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
             onClick={() => setShowHistory(true)}
             className="text-white hover:bg-white/25 rounded-xl h-9 w-9"
             title="Chat History"
@@ -235,17 +314,20 @@ export default function ChatPage() {
       </header>
 
       {/* ── Main content ── */}
-      <main className="flex-1 overflow-y-auto p-4 md:p-6">
+      <main className="flex-1 overflow-y-auto p-4 md:p-6 relative z-[1]">
         <div className="max-w-3xl mx-auto flex flex-col gap-5">
-          {showWelcome || !activeConversationId || messages.length === 0 ? (
+          {showThemePicker ? (
+            <ThemePicker onSelect={handleThemeSelected} />
+          ) : showWelcome || !activeConversationId || messages.length === 0 ? (
             <WelcomeScreen onSelectAction={handleQuickAction} />
           ) : (
             <div className="flex flex-col gap-5">
-              {messages.map((msg) => (
+              {messages.map((msg, idx) => (
                 <ChatMessage
                   key={msg.id}
                   message={msg}
                   onOptionClick={handleSendMessage}
+                  index={idx}
                 />
               ))}
               {isStreaming && (
@@ -259,6 +341,7 @@ export default function ChatPage() {
                   }}
                   isStreaming={true}
                   onOptionClick={handleSendMessage}
+                  index={messages.length}
                 />
               )}
               <div ref={messagesEndRef} />
@@ -268,26 +351,37 @@ export default function ChatPage() {
       </main>
 
       {/* ── Footer ── */}
-      <footer className="p-3 md:p-4 bg-white border-t sticky bottom-0 z-10">
+      <footer className="p-3 md:p-4 bg-white/90 backdrop-blur border-t sticky bottom-0 z-10">
         <div className="max-w-3xl mx-auto flex flex-col gap-2.5">
-          <QuickActions onActionSelect={handleQuickAction} />
+          {!showThemePicker && <QuickActions onActionSelect={handleQuickAction} />}
 
           <div className="relative flex items-center">
             <Input
               data-testid="input-chat"
-              placeholder="Ask AVI anything..."
+              placeholder={
+                showThemePicker
+                  ? "Pick a theme above to start!"
+                  : selectedTheme
+                  ? `Ask AVI anything (${activeTheme?.name} mode)...`
+                  : "Ask AVI anything..."
+              }
               className="pr-12 py-5 text-sm rounded-2xl shadow-sm border-purple-200 focus-visible:ring-purple-300"
               value={inputMessage}
               onChange={(e) => setInputMessage(e.target.value)}
               onKeyDown={handleKeyDown}
-              disabled={isStreaming}
+              disabled={isStreaming || showThemePicker}
             />
             <Button
               data-testid="button-send"
               size="icon"
-              className="absolute right-2 rounded-xl bg-avi-gradient hover:opacity-90 transition-opacity disabled:opacity-40 h-9 w-9"
+              className="absolute right-2 rounded-xl hover:opacity-90 transition-opacity disabled:opacity-40 h-9 w-9"
+              style={
+                activeTheme
+                  ? { background: activeTheme.headerGradient }
+                  : { background: "linear-gradient(135deg, #833AB4, #FD1D1D, #FCB045)" }
+              }
               onClick={() => handleSendMessage(inputMessage)}
-              disabled={!inputMessage.trim() || isStreaming}
+              disabled={!inputMessage.trim() || isStreaming || showThemePicker}
             >
               <Send className="h-4 w-4 text-white" />
             </Button>
