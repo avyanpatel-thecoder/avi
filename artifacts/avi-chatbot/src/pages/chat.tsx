@@ -228,6 +228,22 @@ export default function ChatPage() {
     setShowWelcome(true);
   };
 
+  const handleSkipTheme = () => {
+    setSelectedTheme(null);
+    setShowThemePicker(false);
+    setShowWelcome(true);
+  };
+
+  const handleGoHome = () => {
+    if (activeConversationId && messages.length > 0) {
+      setShowWelcome(true);
+      setShowThemePicker(false);
+    } else {
+      setShowThemePicker(true);
+      setShowWelcome(false);
+    }
+  };
+
   const activeTheme = getTheme(selectedTheme);
 
   const isInConversation =
@@ -262,13 +278,17 @@ export default function ChatPage() {
             : { background: "linear-gradient(135deg, #833AB4, #FD1D1D, #FCB045)" }
         }
       >
-        <div className="flex items-center gap-3">
+        <button
+          onClick={handleGoHome}
+          className="flex items-center gap-3 hover:opacity-80 transition-opacity cursor-pointer rounded-xl px-1 py-0.5"
+          title="Home"
+        >
           <div className="w-10 h-10 rounded-xl bg-white/25 border-2 border-white/60 flex items-center justify-center flex-shrink-0">
             <span className="text-white font-black text-sm tracking-widest drop-shadow">
               {activeTheme ? activeTheme.emoji : "AVI"}
             </span>
           </div>
-          <div>
+          <div className="text-left">
             <h1 className="text-white font-bold text-sm leading-tight tracking-wide">
               AVI - Artificial Virtual Intelligence
             </h1>
@@ -276,7 +296,7 @@ export default function ChatPage() {
               <p className="text-white/70 text-[11px] leading-tight">{activeTheme.name} mode</p>
             )}
           </div>
-        </div>
+        </button>
 
         <div className="flex items-center gap-1">
           {isInConversation && (
@@ -315,9 +335,13 @@ export default function ChatPage() {
 
       {/* ── Main content ── */}
       <main className="flex-1 overflow-y-auto p-4 md:p-6 relative z-[1]">
-        <div className="max-w-3xl mx-auto flex flex-col gap-5">
+        <div className="max-w-5xl mx-auto flex flex-col gap-5">
           {showThemePicker ? (
-            <ThemePicker onSelect={handleThemeSelected} />
+            <ThemePicker
+              onSelect={handleThemeSelected}
+              onSkip={handleSkipTheme}
+              selectedTheme={selectedTheme}
+            />
           ) : showWelcome || !activeConversationId || messages.length === 0 ? (
             <WelcomeScreen onSelectAction={handleQuickAction} themeId={selectedTheme} />
           ) : (
