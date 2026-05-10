@@ -319,7 +319,7 @@ export default function ChatPage() {
           {showThemePicker ? (
             <ThemePicker onSelect={handleThemeSelected} />
           ) : showWelcome || !activeConversationId || messages.length === 0 ? (
-            <WelcomeScreen onSelectAction={handleQuickAction} />
+            <WelcomeScreen onSelectAction={handleQuickAction} themeId={selectedTheme} />
           ) : (
             <div className="flex flex-col gap-5">
               {messages.map((msg, idx) => (
