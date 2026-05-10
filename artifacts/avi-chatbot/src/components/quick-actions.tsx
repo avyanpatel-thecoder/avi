@@ -18,7 +18,7 @@ const actions = [
 export default function QuickActions({ onActionSelect }: QuickActionsProps) {
   return (
     <div className="w-full">
-      <div className="flex flex-wrap gap-1.5">
+      <div className="flex flex-nowrap gap-1.5 overflow-x-auto pb-0.5 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
         {actions.map((action, idx) => (
           <Button
             key={idx}

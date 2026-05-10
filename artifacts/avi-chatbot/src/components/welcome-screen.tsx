@@ -108,7 +108,7 @@ export default function WelcomeScreen({ onSelectAction, themeId }: WelcomeScreen
     <div className="flex flex-col items-center py-4 animate-in fade-in slide-in-from-bottom-4 duration-700 w-full">
       <img src={aviLogo} alt="AVI - Artificial Virtual Intelligence" className="h-28 w-auto mb-3 object-contain" />
 
-      <p className="text-sm text-gray-500 text-center max-w-md mb-5">
+      <p className="text-sm text-gray-500 text-center whitespace-nowrap mb-5">
         Your super smart, always fun AI best friend. What do you want to explore today?
       </p>
 

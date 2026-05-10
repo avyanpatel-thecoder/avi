@@ -379,7 +379,7 @@ export default function ChatPage() {
 
       {/* ── Footer ── */}
       <footer className="p-3 md:p-4 bg-white/90 backdrop-blur border-t sticky bottom-0 z-10">
-        <div className="max-w-3xl mx-auto flex flex-col gap-2.5">
+        <div className="max-w-5xl mx-auto flex flex-col gap-2.5">
           {!showThemePicker && <QuickActions onActionSelect={handleQuickAction} />}
 
           <div className="relative flex items-center">
