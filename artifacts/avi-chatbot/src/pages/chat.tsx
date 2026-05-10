@@ -235,13 +235,15 @@ export default function ChatPage() {
   };
 
   const handleGoHome = () => {
-    if (activeConversationId && messages.length > 0) {
-      setShowWelcome(true);
+    // If currently on the theme picker, treat home as "skip" → go to welcome
+    if (showThemePicker) {
       setShowThemePicker(false);
-    } else {
-      setShowThemePicker(true);
-      setShowWelcome(false);
+      setShowWelcome(true);
+      return;
     }
+    // If in an active conversation, show the welcome/menu screen
+    setShowWelcome(true);
+    setShowThemePicker(false);
   };
 
   const activeTheme = getTheme(selectedTheme);
@@ -339,7 +341,6 @@ export default function ChatPage() {
           {showThemePicker ? (
             <ThemePicker
               onSelect={handleThemeSelected}
-              onSkip={handleSkipTheme}
               selectedTheme={selectedTheme}
             />
           ) : showWelcome || !activeConversationId || messages.length === 0 ? (

@@ -4,11 +4,10 @@ import aviLogo from "@assets/avi_logo_gradient_refined.jpg_1777827450516.jpg";
 
 interface ThemePickerProps {
   onSelect: (themeId: ThemeId) => void;
-  onSkip?: () => void;
   selectedTheme?: ThemeId | null;
 }
 
-export default function ThemePicker({ onSelect, onSkip, selectedTheme }: ThemePickerProps) {
+export default function ThemePicker({ onSelect, selectedTheme }: ThemePickerProps) {
   return (
     <motion.div
       className="flex flex-col items-center py-4"
@@ -85,17 +84,6 @@ export default function ThemePicker({ onSelect, onSkip, selectedTheme }: ThemePi
         })}
       </div>
 
-      {onSkip && (
-        <motion.button
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.6, duration: 0.3 }}
-          onClick={onSkip}
-          className="mt-5 text-sm text-gray-400 hover:text-gray-600 underline underline-offset-2 transition-colors"
-        >
-          Skip — continue without a theme
-        </motion.button>
-      )}
     </motion.div>
   );
 }
