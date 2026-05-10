@@ -382,7 +382,7 @@ export default function ChatPage() {
         <div className="max-w-5xl mx-auto flex flex-col gap-2.5">
           {!showThemePicker && <QuickActions onActionSelect={handleQuickAction} />}
 
-          <div className="relative flex items-center">
+          <div className="flex items-center gap-2">
             <Input
               data-testid="input-chat"
               placeholder={
@@ -392,7 +392,7 @@ export default function ChatPage() {
                   ? `Ask AVI anything (${activeTheme?.name} mode)...`
                   : "Ask AVI anything..."
               }
-              className="pr-12 py-5 text-sm rounded-2xl shadow-sm border-purple-200 focus-visible:ring-purple-300"
+              className="flex-1 py-5 text-sm rounded-2xl shadow-sm border-purple-200 focus-visible:ring-purple-300"
               value={inputMessage}
               onChange={(e) => setInputMessage(e.target.value)}
               onKeyDown={handleKeyDown}
@@ -401,7 +401,7 @@ export default function ChatPage() {
             <Button
               data-testid="button-send"
               size="icon"
-              className="absolute right-2 rounded-xl hover:opacity-90 transition-opacity disabled:opacity-40 h-9 w-9"
+              className="flex-shrink-0 rounded-xl hover:opacity-90 transition-opacity disabled:opacity-40 h-10 w-10"
               style={
                 activeTheme
                   ? { background: activeTheme.headerGradient }
