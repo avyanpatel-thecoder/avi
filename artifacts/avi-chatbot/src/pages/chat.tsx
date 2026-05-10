@@ -328,6 +328,7 @@ export default function ChatPage() {
                   message={msg}
                   onOptionClick={handleSendMessage}
                   index={idx}
+                  themeId={selectedTheme}
                 />
               ))}
               {isStreaming && (
@@ -342,6 +343,7 @@ export default function ChatPage() {
                   isStreaming={true}
                   onOptionClick={handleSendMessage}
                   index={messages.length}
+                  themeId={selectedTheme}
                 />
               )}
               <div ref={messagesEndRef} />

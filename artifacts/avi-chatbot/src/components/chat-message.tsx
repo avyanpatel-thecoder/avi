@@ -3,12 +3,14 @@ import { cn } from "@/lib/utils";
 import { Loader2 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import { motion } from "framer-motion";
+import { ThemeId, getTheme } from "@/lib/themes";
 
 interface ChatMessageProps {
   message: OpenaiMessage;
   isStreaming?: boolean;
   onOptionClick?: (value: string) => void;
   index?: number;
+  themeId?: ThemeId | null;
 }
 
 interface ExtractedOption {
@@ -72,8 +74,11 @@ export default function ChatMessage({
   isStreaming = false,
   onOptionClick,
   index = 0,
+  themeId,
 }: ChatMessageProps) {
   const isUser = message.role === "user";
+  const theme = getTheme(themeId ?? null);
+  const avatarEmoji = theme?.emoji ?? null;
   const { body, options } = isUser || isStreaming
     ? { body: message.content, options: [] }
     : extractOptions(message.content);
@@ -95,11 +100,15 @@ export default function ChatMessage({
         {!isUser && (
           <div className="flex-shrink-0 mt-1">
             <motion.div
-              className="w-9 h-9 rounded-full bg-avi-gradient flex items-center justify-center text-white font-bold shadow-sm text-xs"
+              className="w-9 h-9 rounded-full bg-avi-gradient flex items-center justify-center text-white font-bold shadow-sm"
               animate={isStreaming ? { scale: [1, 1.12, 1] } : {}}
               transition={isStreaming ? { duration: 1.2, repeat: Infinity, ease: "easeInOut" } : {}}
             >
-              AVI
+              {avatarEmoji ? (
+                <span className="text-lg leading-none">{avatarEmoji}</span>
+              ) : (
+                <span className="text-xs">AVI</span>
+              )}
             </motion.div>
           </div>
         )}
