@@ -1,3 +1,5 @@
+import { REAL_MATCHES } from "@/lib/world-cup-matches";
+
 export interface FifaTeam {
   name: string;
   code: string;
@@ -73,6 +75,14 @@ export const FIFA_TEAMS: FifaTeam[] = [
 
 export const EASY_TEAMS = FIFA_TEAMS.filter((t) => t.recent);
 
+const TEAM_BY_CODE = new Map(FIFA_TEAMS.map((t) => [t.code.toLowerCase(), t]));
+
+function teamForCode(code: string): FifaTeam {
+  const team = TEAM_BY_CODE.get(code.toLowerCase());
+  if (!team) throw new Error(`Unknown World Cup team code: ${code}`);
+  return team;
+}
+
 export function flagUrl(code: string, width: 40 | 80 | 160 = 80): string {
   return `https://flagcdn.com/w${width}/${code}.png`;
 }
@@ -92,43 +102,74 @@ export interface GoalGuessQuestion {
   mysteryScore: number;
   correctAnswer: FifaTeam;
   options: FifaTeam[];
+  round: string;
 }
 
+/**
+ * Builds a GoalGuess question from a real FIFA World Cup 2026 match result.
+ * Returns `null` if `forcedTeam` never actually played in the tournament
+ * (e.g. a country that didn't qualify) — the caller should handle that case.
+ */
 export function generateGoalGuessQuestion(
   pool: FifaTeam[] = FIFA_TEAMS,
   forcedTeam?: FifaTeam
-): GoalGuessQuestion {
+): GoalGuessQuestion | null {
+  const poolCodes = new Set(pool.map((t) => t.code.toLowerCase()));
+
+  let candidates = forcedTeam
+    ? REAL_MATCHES.filter(
+        (m) =>
+          m.homeCode.toLowerCase() === forcedTeam.code.toLowerCase() ||
+          m.awayCode.toLowerCase() === forcedTeam.code.toLowerCase()
+      )
+    : REAL_MATCHES.filter((m) => poolCodes.has(m.homeCode) && poolCodes.has(m.awayCode));
+
+  if (forcedTeam && candidates.length === 0) {
+    // The requested country never played a real match in this tournament.
+    return null;
+  }
+
+  if (!forcedTeam && candidates.length === 0) {
+    // Fallback: the easy pool's teams never matched each other directly;
+    // widen to any real match so the game still has data to show.
+    candidates = REAL_MATCHES;
+  }
+
+  const match = candidates[Math.floor(Math.random() * candidates.length)];
+
   let revealedTeam: FifaTeam;
+  let revealedScore: number;
   let correctAnswer: FifaTeam;
-  let distractorsPool: FifaTeam[];
+  let mysteryScore: number;
 
-  if (forcedTeam) {
-    // In patriot mode, the user's own country is always the one revealed —
-    // it must never appear as a guessable option.
-    const opponentPool = shuffle(
-      pool.filter((t) => t.code.toLowerCase() !== forcedTeam.code.toLowerCase())
-    );
-    revealedTeam = forcedTeam;
-    correctAnswer = opponentPool[0];
-    distractorsPool = opponentPool.slice(1);
+  const homeTeam = teamForCode(match.homeCode);
+  const awayTeam = teamForCode(match.awayCode);
+
+  const revealHome = forcedTeam
+    ? forcedTeam.code.toLowerCase() === match.homeCode.toLowerCase()
+    : Math.random() < 0.5;
+
+  if (revealHome) {
+    revealedTeam = homeTeam;
+    revealedScore = match.homeScore;
+    correctAnswer = awayTeam;
+    mysteryScore = match.awayScore;
   } else {
-    const shuffled = shuffle(pool);
-    const [teamA, teamB] = shuffled;
-    distractorsPool = shuffled.slice(2);
-    const revealFirst = Math.random() < 0.5;
-    revealedTeam = revealFirst ? teamA : teamB;
-    correctAnswer = revealFirst ? teamB : teamA;
+    revealedTeam = awayTeam;
+    revealedScore = match.awayScore;
+    correctAnswer = homeTeam;
+    mysteryScore = match.homeScore;
   }
 
-  const revealedScore = Math.floor(Math.random() * 5);
-  let mysteryScore = Math.floor(Math.random() * 5);
-  // avoid a plain draw so the "reveal" feels meaningful most of the time
-  if (mysteryScore === revealedScore && Math.random() < 0.7) {
-    mysteryScore = (mysteryScore + 1 + Math.floor(Math.random() * 3)) % 5;
-  }
-
-  const distractors = shuffle(distractorsPool).slice(0, 3);
+  const distractorsPool = shuffle(
+    pool.filter(
+      (t) =>
+        t.code.toLowerCase() !== revealedTeam.code.toLowerCase() &&
+        t.code.toLowerCase() !== correctAnswer.code.toLowerCase()
+    )
+  );
+  const distractors = distractorsPool.slice(0, 3);
   const options = shuffle([correctAnswer, ...distractors]);
 
-  return { revealedTeam, revealedScore, mysteryScore, correctAnswer, options };
+  return { revealedTeam, revealedScore, mysteryScore, correctAnswer, options, round: match.round };
 }

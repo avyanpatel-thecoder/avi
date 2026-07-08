@@ -69,12 +69,22 @@ export default function GoalGuessModal({ isOpen, onClose }: GoalGuessModalProps)
     }
   }, [isOpen]);
 
+  const nextQuestion = (): GoalGuessQuestion => {
+    // forcedTeamRef is only ever set once we've confirmed the team has real
+    // matches (see confirmCountry), so this should always succeed. Fall back
+    // to the full team pool defensively just in case.
+    return (
+      generateGoalGuessQuestion(poolRef.current, forcedTeamRef.current) ??
+      generateGoalGuessQuestion(FIFA_TEAMS)!
+    );
+  };
+
   const runGame = () => {
     setScore(0);
     setAttempts(0);
     setTimeLeft(GAME_SECONDS);
     setAnswer(null);
-    setQuestion(generateGoalGuessQuestion(poolRef.current, forcedTeamRef.current));
+    setQuestion(nextQuestion());
     setPhase("playing");
 
     clearTimer();
@@ -108,6 +118,12 @@ export default function GoalGuessModal({ isOpen, onClose }: GoalGuessModalProps)
       return;
     }
     const team: FifaTeam = { name: match.name, code: match.code };
+    if (!generateGoalGuessQuestion(FIFA_TEAMS, team)) {
+      setCountryError(
+        `${match.name} didn't play in the FIFA World Cup 2026. Try a country that competed!`
+      );
+      return;
+    }
     setPatriotTeam(team);
     poolRef.current = FIFA_TEAMS;
     forcedTeamRef.current = team;
@@ -125,7 +141,7 @@ export default function GoalGuessModal({ isOpen, onClose }: GoalGuessModalProps)
     setTimeout(() => {
       if (timeLeft <= 0) return;
       setAnswer(null);
-      setQuestion(generateGoalGuessQuestion(poolRef.current, forcedTeamRef.current));
+      setQuestion(nextQuestion());
     }, 800);
   };
 
@@ -255,7 +271,7 @@ export default function GoalGuessModal({ isOpen, onClose }: GoalGuessModalProps)
               </div>
               <h3 className="font-black text-gray-800 text-lg">How to play</h3>
               <p className="text-sm text-gray-600 max-w-xs leading-relaxed">
-                We'll show you the score of a FIFA World Cup 2026 match and reveal <b>one</b> team's flag.
+                We'll show you the real score from an actual FIFA World Cup 2026 match and reveal <b>one</b> team's flag.
                 Guess who they're playing against before time runs out! You've got{" "}
                 <b>{GAME_SECONDS} seconds</b> to score as many correct guesses as you can.
               </p>

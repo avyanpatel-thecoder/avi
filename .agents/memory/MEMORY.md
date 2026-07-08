@@ -1,0 +1,1 @@
+- [Real sports/live-event data sourcing](real-sports-data-sourcing.md) — public ESPN scoreboard API returns real match results with no auth; try it before scraping.
