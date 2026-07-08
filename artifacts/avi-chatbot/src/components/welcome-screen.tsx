@@ -1,5 +1,5 @@
 import aviLogo from "@assets/avi_logo_gradient_refined.jpg_1777827450516.jpg";
-import { Bot, Calculator, BookOpen, Laugh, Plane, Target, Globe, Dices, BookMarked, Sparkles } from "lucide-react";
+import { Bot, Calculator, BookOpen, Laugh, Plane, Target, Globe, Dices, BookMarked, Sparkles, Trophy } from "lucide-react";
 import { ThemeId } from "@/lib/themes";
 import { ReactNode } from "react";
 
@@ -100,6 +100,14 @@ const features: FeatureDef[] = [
     action: "Can you recommend a good book for a kid?",
     bg: "bg-rose-50", border: "border-rose-200", iconBg: "bg-rose-100", iconColor: "text-rose-600",
     themedIcons: { magic: "📚", space: "🛰️", monster: "📖", silly: "📚", jungle: "🦉", ocean: "🐬" },
+  },
+  {
+    defaultIcon: <Trophy className="w-5 h-5" />,
+    title: "GoalGuess 2026",
+    description: "Guess the mystery World Cup team!",
+    action: "goalguess",
+    bg: "bg-lime-50", border: "border-lime-200", iconBg: "bg-lime-100", iconColor: "text-lime-600",
+    themedIcons: { magic: "⚽", space: "⚽", monster: "⚽", silly: "⚽", jungle: "⚽", ocean: "⚽" },
   },
 ];
 

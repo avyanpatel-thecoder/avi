@@ -13,6 +13,7 @@ const actions = [
   { label: "Search Wikipedia", action: "wikipedia" },
   { label: "Random article", action: "Tell me about a random Wikipedia article" },
   { label: "Book recommendation", action: "Recommend a book for me" },
+  { label: "⚽ GoalGuess 2026", action: "goalguess" },
 ];
 
 export default function QuickActions({ onActionSelect }: QuickActionsProps) {

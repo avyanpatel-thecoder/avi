@@ -19,6 +19,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Send, Loader2, Clock, LayoutGrid, Palette } from "lucide-react";
 import WikipediaModal from "@/components/wikipedia-modal";
+import GoalGuessModal from "@/components/goalguess-modal";
 import { getSessionId } from "@/lib/session";
 import { ThemeId, getTheme, saveConvTheme, loadConvTheme } from "@/lib/themes";
 
@@ -75,6 +76,7 @@ export default function ChatPage() {
   const [isStreaming, setIsStreaming] = useState(false);
   const [streamingContent, setStreamingContent] = useState("");
   const [isWikiModalOpen, setIsWikiModalOpen] = useState(false);
+  const [isGoalGuessOpen, setIsGoalGuessOpen] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
@@ -195,6 +197,8 @@ export default function ChatPage() {
   const handleQuickAction = (action: string) => {
     if (action === "wikipedia") {
       setIsWikiModalOpen(true);
+    } else if (action === "goalguess") {
+      setIsGoalGuessOpen(true);
     } else if (
       action === "random_wikipedia" ||
       action === "Tell me about a random Wikipedia article"
@@ -425,6 +429,11 @@ export default function ChatPage() {
         isOpen={isWikiModalOpen}
         onClose={() => setIsWikiModalOpen(false)}
         onInsert={(content) => handleSendMessage(`Tell me about: ${content}`)}
+      />
+
+      <GoalGuessModal
+        isOpen={isGoalGuessOpen}
+        onClose={() => setIsGoalGuessOpen(false)}
       />
 
       <HistoryPanel
