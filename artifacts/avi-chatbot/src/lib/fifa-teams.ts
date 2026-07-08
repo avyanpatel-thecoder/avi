@@ -1,27 +1,28 @@
 export interface FifaTeam {
   name: string;
   code: string;
+  recent?: boolean;
 }
 
 export const FIFA_TEAMS: FifaTeam[] = [
-  { name: "Brazil", code: "br" },
-  { name: "Argentina", code: "ar" },
-  { name: "France", code: "fr" },
-  { name: "Germany", code: "de" },
-  { name: "Spain", code: "es" },
-  { name: "England", code: "gb-eng" },
-  { name: "Portugal", code: "pt" },
-  { name: "Netherlands", code: "nl" },
-  { name: "Italy", code: "it" },
-  { name: "Belgium", code: "be" },
-  { name: "Croatia", code: "hr" },
-  { name: "Uruguay", code: "uy" },
-  { name: "Mexico", code: "mx" },
-  { name: "USA", code: "us" },
+  { name: "Brazil", code: "br", recent: true },
+  { name: "Argentina", code: "ar", recent: true },
+  { name: "France", code: "fr", recent: true },
+  { name: "Germany", code: "de", recent: true },
+  { name: "Spain", code: "es", recent: true },
+  { name: "England", code: "gb-eng", recent: true },
+  { name: "Portugal", code: "pt", recent: true },
+  { name: "Netherlands", code: "nl", recent: true },
+  { name: "Italy", code: "it", recent: true },
+  { name: "Belgium", code: "be", recent: true },
+  { name: "Croatia", code: "hr", recent: true },
+  { name: "Uruguay", code: "uy", recent: true },
+  { name: "Mexico", code: "mx", recent: true },
+  { name: "USA", code: "us", recent: true },
+  { name: "Japan", code: "jp", recent: true },
+  { name: "Morocco", code: "ma", recent: true },
   { name: "Canada", code: "ca" },
-  { name: "Japan", code: "jp" },
   { name: "South Korea", code: "kr" },
-  { name: "Morocco", code: "ma" },
   { name: "Senegal", code: "sn" },
   { name: "Nigeria", code: "ng" },
   { name: "Ghana", code: "gh" },
@@ -37,6 +38,8 @@ export const FIFA_TEAMS: FifaTeam[] = [
   { name: "Qatar", code: "qa" },
   { name: "Saudi Arabia", code: "sa" },
 ];
+
+export const EASY_TEAMS = FIFA_TEAMS.filter((t) => t.recent);
 
 export function flagUrl(code: string, width: 40 | 80 | 160 = 80): string {
   return `https://flagcdn.com/w${width}/${code}.png`;
@@ -59,8 +62,27 @@ export interface GoalGuessQuestion {
   options: FifaTeam[];
 }
 
-export function generateGoalGuessQuestion(): GoalGuessQuestion {
-  const [teamA, teamB, ...distractorsPool] = shuffle(FIFA_TEAMS);
+export function generateGoalGuessQuestion(
+  pool: FifaTeam[] = FIFA_TEAMS,
+  forcedTeam?: FifaTeam
+): GoalGuessQuestion {
+  let teamA: FifaTeam;
+  let teamB: FifaTeam;
+  let distractorsPool: FifaTeam[];
+
+  if (forcedTeam) {
+    const opponentPool = shuffle(
+      pool.filter((t) => t.code.toLowerCase() !== forcedTeam.code.toLowerCase())
+    );
+    teamA = forcedTeam;
+    teamB = opponentPool[0];
+    distractorsPool = opponentPool.slice(1);
+  } else {
+    const shuffled = shuffle(pool);
+    [teamA, teamB] = shuffled;
+    distractorsPool = shuffled.slice(2);
+  }
+
   const revealFirst = Math.random() < 0.5;
   const revealedTeam = revealFirst ? teamA : teamB;
   const correctAnswer = revealFirst ? teamB : teamA;
