@@ -4,39 +4,71 @@ export interface FifaTeam {
   recent?: boolean;
 }
 
+// The confirmed 48-team lineup for the FIFA World Cup 2026 (hosts + qualifiers,
+// no qualifier-stage-only teams). Hosts USA, Mexico, and Canada are automatic
+// qualifiers and do play in the tournament.
 export const FIFA_TEAMS: FifaTeam[] = [
-  { name: "Brazil", code: "br", recent: true },
-  { name: "Argentina", code: "ar", recent: true },
-  { name: "France", code: "fr", recent: true },
-  { name: "Germany", code: "de", recent: true },
-  { name: "Spain", code: "es", recent: true },
-  { name: "England", code: "gb-eng", recent: true },
-  { name: "Portugal", code: "pt", recent: true },
-  { name: "Netherlands", code: "nl", recent: true },
-  { name: "Italy", code: "it", recent: true },
-  { name: "Belgium", code: "be", recent: true },
-  { name: "Croatia", code: "hr", recent: true },
-  { name: "Uruguay", code: "uy", recent: true },
+  // Hosts
+  { name: "Canada", code: "ca" },
   { name: "Mexico", code: "mx", recent: true },
   { name: "USA", code: "us", recent: true },
-  { name: "Japan", code: "jp", recent: true },
-  { name: "Morocco", code: "ma", recent: true },
-  { name: "Canada", code: "ca" },
-  { name: "South Korea", code: "kr" },
-  { name: "Senegal", code: "sn" },
-  { name: "Nigeria", code: "ng" },
+
+  // CAF — Africa
+  { name: "Algeria", code: "dz" },
+  { name: "Cabo Verde", code: "cv" },
+  { name: "Congo DR", code: "cd" },
+  { name: "Ivory Coast", code: "ci" },
+  { name: "Egypt", code: "eg" },
   { name: "Ghana", code: "gh" },
+  { name: "Morocco", code: "ma", recent: true },
+  { name: "Senegal", code: "sn" },
+  { name: "South Africa", code: "za" },
+  { name: "Tunisia", code: "tn" },
+
+  // AFC — Asia
   { name: "Australia", code: "au" },
-  { name: "Switzerland", code: "ch" },
-  { name: "Denmark", code: "dk" },
-  { name: "Poland", code: "pl" },
-  { name: "Colombia", code: "co" },
-  { name: "Chile", code: "cl" },
-  { name: "Sweden", code: "se" },
-  { name: "Serbia", code: "rs" },
-  { name: "Ecuador", code: "ec" },
+  { name: "Iraq", code: "iq" },
+  { name: "Iran", code: "ir" },
+  { name: "Japan", code: "jp", recent: true },
+  { name: "Jordan", code: "jo" },
+  { name: "South Korea", code: "kr" },
   { name: "Qatar", code: "qa" },
   { name: "Saudi Arabia", code: "sa" },
+  { name: "Uzbekistan", code: "uz" },
+
+  // CONCACAF — non-host
+  { name: "Curacao", code: "cw" },
+  { name: "Haiti", code: "ht" },
+  { name: "Panama", code: "pa" },
+
+  // CONMEBOL — South America
+  { name: "Argentina", code: "ar", recent: true },
+  { name: "Brazil", code: "br", recent: true },
+  { name: "Colombia", code: "co" },
+  { name: "Ecuador", code: "ec" },
+  { name: "Paraguay", code: "py" },
+  { name: "Uruguay", code: "uy", recent: true },
+
+  // OFC — Oceania
+  { name: "New Zealand", code: "nz" },
+
+  // UEFA — Europe
+  { name: "Austria", code: "at" },
+  { name: "Belgium", code: "be", recent: true },
+  { name: "Bosnia and Herzegovina", code: "ba" },
+  { name: "Croatia", code: "hr", recent: true },
+  { name: "Czechia", code: "cz" },
+  { name: "England", code: "gb-eng", recent: true },
+  { name: "France", code: "fr", recent: true },
+  { name: "Germany", code: "de", recent: true },
+  { name: "Netherlands", code: "nl", recent: true },
+  { name: "Norway", code: "no" },
+  { name: "Portugal", code: "pt", recent: true },
+  { name: "Scotland", code: "gb-sct" },
+  { name: "Spain", code: "es", recent: true },
+  { name: "Sweden", code: "se" },
+  { name: "Switzerland", code: "ch", recent: true },
+  { name: "Turkey", code: "tr" },
 ];
 
 export const EASY_TEAMS = FIFA_TEAMS.filter((t) => t.recent);

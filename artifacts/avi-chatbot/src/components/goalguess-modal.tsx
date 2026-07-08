@@ -26,7 +26,7 @@ type AnswerState = { chosen: FifaTeam; correct: boolean } | null;
 
 const MODE_INFO: Record<GameMode, { label: string; emoji: string; desc: string }> = {
   easy: { label: "Easy", emoji: "🌱", desc: "Recent World Cup favorites only" },
-  hard: { label: "Hard", emoji: "🔥", desc: "All 32 teams in the mix" },
+  hard: { label: "Hard", emoji: "🔥", desc: "All 48 World Cup 2026 teams" },
   patriot: { label: "Patriot", emoji: "🎌", desc: "Only your country's matches" },
 };
 
