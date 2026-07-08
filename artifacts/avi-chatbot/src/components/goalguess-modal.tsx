@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { motion, AnimatePresence } from "framer-motion";
-import { generateGoalGuessQuestion, GoalGuessQuestion, FifaTeam } from "@/lib/fifa-teams";
+import { generateGoalGuessQuestion, GoalGuessQuestion, FifaTeam, flagUrl } from "@/lib/fifa-teams";
 
 interface GoalGuessModalProps {
   isOpen: boolean;
@@ -161,7 +161,11 @@ export default function GoalGuessModal({ isOpen, onClose }: GoalGuessModalProps)
                 >
                   <div className="flex items-center justify-center gap-4">
                     <div className="flex flex-col items-center gap-1 flex-1">
-                      <span className="text-4xl">{question.revealedTeam.flag}</span>
+                      <img
+                        src={flagUrl(question.revealedTeam.code)}
+                        alt={`${question.revealedTeam.name} flag`}
+                        className="w-14 h-10 object-cover rounded-md shadow-sm border border-gray-200"
+                      />
                       <span className="font-bold text-gray-800 text-xs text-center">
                         {question.revealedTeam.name}
                       </span>
@@ -171,7 +175,9 @@ export default function GoalGuessModal({ isOpen, onClose }: GoalGuessModalProps)
                     </div>
                     <div className="font-black text-gray-400 text-lg">VS</div>
                     <div className="flex flex-col items-center gap-1 flex-1">
-                      <span className="text-4xl">❓</span>
+                      <div className="w-14 h-10 rounded-md bg-gray-100 border border-gray-200 flex items-center justify-center text-2xl">
+                        ❓
+                      </div>
                       <span className="font-bold text-gray-400 text-xs">Mystery Team</span>
                       <span className="text-2xl font-black text-gray-500">
                         {question.mysteryScore}
@@ -204,7 +210,11 @@ export default function GoalGuessModal({ isOpen, onClose }: GoalGuessModalProps)
                           : "bg-white border-green-200 text-gray-700 hover:bg-green-50 hover:border-green-400"
                       }`}
                     >
-                      <span className="text-xl">{team.flag}</span>
+                      <img
+                        src={flagUrl(team.code, 40)}
+                        alt={`${team.name} flag`}
+                        className="w-6 h-4 object-cover rounded-sm border border-gray-200"
+                      />
                       {team.name}
                     </Button>
                   );
@@ -219,7 +229,7 @@ export default function GoalGuessModal({ isOpen, onClose }: GoalGuessModalProps)
                     answer.correct ? "text-green-600" : "text-red-500"
                   }`}
                 >
-                  {answer.correct ? "GOAL! Correct! ⚽🎉" : `Offside! It was ${question.correctAnswer.name} ${question.correctAnswer.flag}`}
+                  {answer.correct ? "GOAL! Correct! ⚽🎉" : `Offside! It was ${question.correctAnswer.name}`}
                 </motion.p>
               )}
             </div>

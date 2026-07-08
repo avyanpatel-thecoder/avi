@@ -1,42 +1,46 @@
 export interface FifaTeam {
   name: string;
-  flag: string;
+  code: string;
 }
 
 export const FIFA_TEAMS: FifaTeam[] = [
-  { name: "Brazil", flag: "🇧🇷" },
-  { name: "Argentina", flag: "🇦🇷" },
-  { name: "France", flag: "🇫🇷" },
-  { name: "Germany", flag: "🇩🇪" },
-  { name: "Spain", flag: "🇪🇸" },
-  { name: "England", flag: "🇬🇧" },
-  { name: "Portugal", flag: "🇵🇹" },
-  { name: "Netherlands", flag: "🇳🇱" },
-  { name: "Italy", flag: "🇮🇹" },
-  { name: "Belgium", flag: "🇧🇪" },
-  { name: "Croatia", flag: "🇭🇷" },
-  { name: "Uruguay", flag: "🇺🇾" },
-  { name: "Mexico", flag: "🇲🇽" },
-  { name: "USA", flag: "🇺🇸" },
-  { name: "Canada", flag: "🇨🇦" },
-  { name: "Japan", flag: "🇯🇵" },
-  { name: "South Korea", flag: "🇰🇷" },
-  { name: "Morocco", flag: "🇲🇦" },
-  { name: "Senegal", flag: "🇸🇳" },
-  { name: "Nigeria", flag: "🇳🇬" },
-  { name: "Ghana", flag: "🇬🇭" },
-  { name: "Australia", flag: "🇦🇺" },
-  { name: "Switzerland", flag: "🇨🇭" },
-  { name: "Denmark", flag: "🇩🇰" },
-  { name: "Poland", flag: "🇵🇱" },
-  { name: "Colombia", flag: "🇨🇴" },
-  { name: "Chile", flag: "🇨🇱" },
-  { name: "Sweden", flag: "🇸🇪" },
-  { name: "Serbia", flag: "🇷🇸" },
-  { name: "Ecuador", flag: "🇪🇨" },
-  { name: "Qatar", flag: "🇶🇦" },
-  { name: "Saudi Arabia", flag: "🇸🇦" },
+  { name: "Brazil", code: "br" },
+  { name: "Argentina", code: "ar" },
+  { name: "France", code: "fr" },
+  { name: "Germany", code: "de" },
+  { name: "Spain", code: "es" },
+  { name: "England", code: "gb-eng" },
+  { name: "Portugal", code: "pt" },
+  { name: "Netherlands", code: "nl" },
+  { name: "Italy", code: "it" },
+  { name: "Belgium", code: "be" },
+  { name: "Croatia", code: "hr" },
+  { name: "Uruguay", code: "uy" },
+  { name: "Mexico", code: "mx" },
+  { name: "USA", code: "us" },
+  { name: "Canada", code: "ca" },
+  { name: "Japan", code: "jp" },
+  { name: "South Korea", code: "kr" },
+  { name: "Morocco", code: "ma" },
+  { name: "Senegal", code: "sn" },
+  { name: "Nigeria", code: "ng" },
+  { name: "Ghana", code: "gh" },
+  { name: "Australia", code: "au" },
+  { name: "Switzerland", code: "ch" },
+  { name: "Denmark", code: "dk" },
+  { name: "Poland", code: "pl" },
+  { name: "Colombia", code: "co" },
+  { name: "Chile", code: "cl" },
+  { name: "Sweden", code: "se" },
+  { name: "Serbia", code: "rs" },
+  { name: "Ecuador", code: "ec" },
+  { name: "Qatar", code: "qa" },
+  { name: "Saudi Arabia", code: "sa" },
 ];
+
+export function flagUrl(code: string, width: 40 | 80 | 160 = 80): string {
+  return `https://flagcdn.com/w${width}/${code}.png`;
+}
 
 function shuffle<T>(arr: T[]): T[] {
   const copy = [...arr];
