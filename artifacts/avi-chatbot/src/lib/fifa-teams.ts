@@ -66,26 +66,27 @@ export function generateGoalGuessQuestion(
   pool: FifaTeam[] = FIFA_TEAMS,
   forcedTeam?: FifaTeam
 ): GoalGuessQuestion {
-  let teamA: FifaTeam;
-  let teamB: FifaTeam;
+  let revealedTeam: FifaTeam;
+  let correctAnswer: FifaTeam;
   let distractorsPool: FifaTeam[];
 
   if (forcedTeam) {
+    // In patriot mode, the user's own country is always the one revealed —
+    // it must never appear as a guessable option.
     const opponentPool = shuffle(
       pool.filter((t) => t.code.toLowerCase() !== forcedTeam.code.toLowerCase())
     );
-    teamA = forcedTeam;
-    teamB = opponentPool[0];
+    revealedTeam = forcedTeam;
+    correctAnswer = opponentPool[0];
     distractorsPool = opponentPool.slice(1);
   } else {
     const shuffled = shuffle(pool);
-    [teamA, teamB] = shuffled;
+    const [teamA, teamB] = shuffled;
     distractorsPool = shuffled.slice(2);
+    const revealFirst = Math.random() < 0.5;
+    revealedTeam = revealFirst ? teamA : teamB;
+    correctAnswer = revealFirst ? teamB : teamA;
   }
-
-  const revealFirst = Math.random() < 0.5;
-  const revealedTeam = revealFirst ? teamA : teamB;
-  const correctAnswer = revealFirst ? teamB : teamA;
 
   const revealedScore = Math.floor(Math.random() * 5);
   let mysteryScore = Math.floor(Math.random() * 5);
