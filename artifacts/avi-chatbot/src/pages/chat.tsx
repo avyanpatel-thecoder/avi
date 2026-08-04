@@ -17,7 +17,7 @@ import ThemePicker from "@/components/theme-picker";
 import ThemeBackground from "@/components/theme-background";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Send, Loader2, Clock, LayoutGrid, Palette } from "lucide-react";
+import { Send, Loader2, Clock, LayoutGrid, Palette, HeadphonesIcon } from "lucide-react";
 import WikipediaModal from "@/components/wikipedia-modal";
 import GoalGuessModal from "@/components/goalguess-modal";
 import { getSessionId } from "@/lib/session";
@@ -336,6 +336,16 @@ export default function ChatPage() {
           >
             <Clock className="h-5 w-5" />
           </Button>
+          <a href={`${import.meta.env.BASE_URL}customersupport`}>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="text-white hover:bg-white/25 rounded-xl h-9 w-9"
+              title="Customer Support"
+            >
+              <HeadphonesIcon className="h-5 w-5" />
+            </Button>
+          </a>
         </div>
       </header>
 
