@@ -112,15 +112,24 @@ export default function CustomerSupportPage() {
   const filteredFaqs =
     activeCategory === "All" ? faqs : faqs.filter((f) => f.category === activeCategory);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitting(true);
-    // Simulate submission
-    setTimeout(() => {
-      setSubmitting(false);
+    try {
+      const BASE = import.meta.env.BASE_URL;
+      const res = await fetch(`${BASE}api/support/contact`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(form),
+      });
+      if (!res.ok) throw new Error("Failed");
       setSubmitted(true);
       setForm({ name: "", email: "", subject: "", message: "" });
-    }, 1200);
+    } catch {
+      alert("Something went wrong. Please try again.");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
