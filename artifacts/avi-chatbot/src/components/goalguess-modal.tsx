@@ -13,9 +13,16 @@ import {
 } from "@/lib/fifa-teams";
 import { findCountry } from "@/lib/countries";
 
+export interface GoalGuessResult {
+  score: number;
+  attempts: number;
+  maxStreak: number;
+}
+
 interface GoalGuessModalProps {
   isOpen: boolean;
   onClose: () => void;
+  onGameEnd?: (result: GoalGuessResult) => void;
 }
 
 const GAME_SECONDS = 60;
@@ -30,7 +37,7 @@ const MODE_INFO: Record<GameMode, { label: string; emoji: string; desc: string }
   patriot: { label: "Patriot", emoji: "🎌", desc: "Only your country's matches" },
 };
 
-export default function GoalGuessModal({ isOpen, onClose }: GoalGuessModalProps) {
+export default function GoalGuessModal({ isOpen, onClose, onGameEnd }: GoalGuessModalProps) {
   const [phase, setPhase] = useState<GamePhase>("mode");
   const [mode, setMode] = useState<GameMode | null>(null);
   const [countryInput, setCountryInput] = useState("");
@@ -43,6 +50,12 @@ export default function GoalGuessModal({ isOpen, onClose }: GoalGuessModalProps)
   const [timeLeft, setTimeLeft] = useState(GAME_SECONDS);
   const [answer, setAnswer] = useState<AnswerState>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // Achievement tracking refs (stay in sync with state for use in timer callback)
+  const scoreRef = useRef(0);
+  const attemptsRef = useRef(0);
+  const currentStreakRef = useRef(0);
+  const maxStreakRef = useRef(0);
 
   const poolRef = useRef<FifaTeam[]>(FIFA_TEAMS);
   const forcedTeamRef = useRef<FifaTeam | undefined>(undefined);
@@ -86,6 +99,11 @@ export default function GoalGuessModal({ isOpen, onClose }: GoalGuessModalProps)
     setAnswer(null);
     setQuestion(nextQuestion());
     setPhase("playing");
+    // Reset achievement tracking refs
+    scoreRef.current = 0;
+    attemptsRef.current = 0;
+    currentStreakRef.current = 0;
+    maxStreakRef.current = 0;
 
     clearTimer();
     timerRef.current = setInterval(() => {
@@ -93,6 +111,11 @@ export default function GoalGuessModal({ isOpen, onClose }: GoalGuessModalProps)
         if (t <= 1) {
           clearTimer();
           setPhase("finished");
+          onGameEnd?.({
+            score: scoreRef.current,
+            attempts: attemptsRef.current,
+            maxStreak: maxStreakRef.current,
+          });
           return 0;
         }
         return t - 1;
@@ -135,8 +158,18 @@ export default function GoalGuessModal({ isOpen, onClose }: GoalGuessModalProps)
     if (!question || answer || phase !== "playing") return;
     const correct = team.name === question.correctAnswer.name;
     setAnswer({ chosen: team, correct });
+    attemptsRef.current += 1;
     setAttempts((a) => a + 1);
-    if (correct) setScore((s) => s + 1);
+    if (correct) {
+      scoreRef.current += 1;
+      setScore((s) => s + 1);
+      currentStreakRef.current += 1;
+      if (currentStreakRef.current > maxStreakRef.current) {
+        maxStreakRef.current = currentStreakRef.current;
+      }
+    } else {
+      currentStreakRef.current = 0;
+    }
 
     setTimeout(() => {
       if (timeLeft <= 0) return;

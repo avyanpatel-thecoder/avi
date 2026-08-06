@@ -2,10 +2,12 @@ import aviLogo from "@assets/avi_logo_gradient_refined.jpg_1777827450516.jpg";
 import { Bot, Calculator, BookOpen, Laugh, Plane, Target, Globe, Dices, BookMarked, Sparkles, Trophy, Terminal } from "lucide-react";
 import { ThemeId } from "@/lib/themes";
 import { ReactNode } from "react";
+import BadgeShelf from "@/components/badge-shelf";
 
 interface WelcomeScreenProps {
   onSelectAction: (action: string) => void;
   themeId?: ThemeId | null;
+  unlockedIds?: string[];
 }
 
 interface FeatureDef {
@@ -111,7 +113,7 @@ const features: FeatureDef[] = [
   },
 ];
 
-export default function WelcomeScreen({ onSelectAction, themeId }: WelcomeScreenProps) {
+export default function WelcomeScreen({ onSelectAction, themeId, unlockedIds = [] }: WelcomeScreenProps) {
   return (
     <div className="flex flex-col items-center py-4 animate-in fade-in slide-in-from-bottom-4 duration-700 w-full">
       <img src={aviLogo} alt="AVI - Artificial Virtual Intelligence" className="h-28 w-auto mb-3 object-contain" />
@@ -175,6 +177,9 @@ export default function WelcomeScreen({ onSelectAction, themeId }: WelcomeScreen
           {'> initializing coding assistant... ready to compile!'}
         </div>
       </div>
+
+      {/* Badge shelf */}
+      <BadgeShelf unlockedIds={unlockedIds} />
     </div>
   );
 }

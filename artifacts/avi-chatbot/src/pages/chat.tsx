@@ -19,10 +19,12 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Send, Loader2, Clock, LayoutGrid, Palette, HeadphonesIcon } from "lucide-react";
 import WikipediaModal from "@/components/wikipedia-modal";
-import GoalGuessModal from "@/components/goalguess-modal";
+import GoalGuessModal, { GoalGuessResult } from "@/components/goalguess-modal";
 import { getSessionId } from "@/lib/session";
 import { ThemeId, getTheme, saveConvTheme, loadConvTheme, saveCodingMode, loadCodingMode } from "@/lib/themes";
 import CodingBackground from "@/components/coding-background";
+import { useAchievements } from "@/hooks/use-achievements";
+import { AchievementToastStack } from "@/components/achievement-toast";
 
 export default function ChatPage() {
   const queryClient = useQueryClient();
@@ -36,6 +38,8 @@ export default function ChatPage() {
   const [showThemePicker, setShowThemePicker] = useState(false);
   const [selectedTheme, setSelectedTheme] = useState<ThemeId | null>(null);
   const [isCodingMode, setIsCodingMode] = useState(false);
+
+  const { state: achState, unlock, increment, toasts: achToasts, popToast } = useAchievements();
 
   // Ref to prevent auto-selection when user explicitly starts a new chat
   const newChatMode = useRef(false);
@@ -99,6 +103,14 @@ export default function ChatPage() {
     setIsStreaming(true);
     setStreamingContent("");
 
+    // ── Achievement: message-content detection ─────────────────────────────
+    const lc = content.toLowerCase();
+    if (/trivia/i.test(lc)) unlock("trivia_star");
+    if (/\bjoke\b/i.test(lc)) unlock("jokester");
+    if (/\bbook\b/i.test(lc)) unlock("bookworm");
+    if (/\bvacation\b/i.test(lc)) unlock("globetrotter");
+    if (/wikipedia/i.test(lc)) unlock("wiki_explorer");
+
     let currentConvId = activeConversationId;
 
     if (!currentConvId) {
@@ -113,6 +125,10 @@ export default function ChatPage() {
       if (selectedTheme) {
         saveConvTheme(newConv.id, selectedTheme);
       }
+
+      // ── Achievement: first chat + conversation count ──────────────────────
+      unlock("first_chat");
+      increment("conversations", { unlockAt: 10, achievementId: "curious_mind" });
 
       queryClient.invalidateQueries({
         queryKey: getListOpenaiConversationsQueryKey(),
@@ -213,12 +229,21 @@ export default function ChatPage() {
   const CODING_ACTIVATE = /\b(coding mode|code mode|activate coding|start coding mode|enter coding)\b/i;
   const CODING_DEACTIVATE = /\b(exit coding|leave coding|deactivate coding|normal mode|exit coding mode)\b/i;
 
+  const handleGoalGuessEnd = (result: GoalGuessResult) => {
+    const toUnlock: string[] = ["goalguess_hero"];
+    if (result.score >= 5) toUnlock.push("goalguess_champion");
+    if (result.maxStreak >= 3) toUnlock.push("goalguess_streak");
+    unlock(toUnlock);
+  };
+
   const handleQuickAction = (action: string) => {
     if (action === "wikipedia") {
+      unlock("wiki_explorer");
       setIsWikiModalOpen(true);
     } else if (action === "goalguess") {
       setIsGoalGuessOpen(true);
     } else if (action === "coding_mode") {
+      unlock("code_apprentice");
       setIsCodingMode(true);
       if (activeConversationId) saveCodingMode(activeConversationId, true);
       handleSendMessage("Activate coding mode! Let's write some code!");
@@ -226,6 +251,7 @@ export default function ChatPage() {
       action === "random_wikipedia" ||
       action === "Tell me about a random Wikipedia article"
     ) {
+      unlock("random_ranger");
       handleSendMessage("Tell me about a random Wikipedia article!");
     } else {
       handleSendMessage(action);
@@ -369,6 +395,7 @@ export default function ChatPage() {
               const next = !isCodingMode;
               setIsCodingMode(next);
               if (activeConversationId) saveCodingMode(activeConversationId, next);
+              if (next) unlock("code_apprentice");
             }}
             className={`rounded-xl h-9 w-9 font-mono text-xs transition-all ${
               isCodingMode
@@ -402,7 +429,7 @@ export default function ChatPage() {
               selectedTheme={selectedTheme}
             />
           ) : showWelcome || !activeConversationId || messages.length === 0 ? (
-            <WelcomeScreen onSelectAction={handleQuickAction} themeId={selectedTheme} />
+            <WelcomeScreen onSelectAction={handleQuickAction} themeId={selectedTheme} unlockedIds={achState.unlockedIds} />
           ) : (
             <div className="flex flex-col gap-5">
               {messages.map((msg, idx) => (
@@ -488,6 +515,7 @@ export default function ChatPage() {
       <GoalGuessModal
         isOpen={isGoalGuessOpen}
         onClose={() => setIsGoalGuessOpen(false)}
+        onGameEnd={handleGoalGuessEnd}
       />
 
       <HistoryPanel
@@ -498,6 +526,9 @@ export default function ChatPage() {
         onSelectConversation={handleSelectConversation}
         onNewChat={handleNewChat}
       />
+
+      {/* ── Achievement toast stack ── */}
+      <AchievementToastStack toasts={achToasts} onDismiss={popToast} />
     </div>
   );
 }
