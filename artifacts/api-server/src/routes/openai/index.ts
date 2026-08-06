@@ -69,6 +69,20 @@ YOU CAN HELP WITH:
 
 Always respond in a warm, enthusiastic tone. Use emojis sparingly. Keep answers concise but complete.`;
 
+const CODING_MODE_PROMPT = `
+
+CODING MODE ACTIVE 💻: You are now AVI in specialized Coding Mode!
+- Be an expert, encouraging coding mentor for kids and young programmers
+- Help with ALL programming languages: Python, JavaScript, HTML/CSS, Scratch, Java, C++, Ruby, and more
+- ALWAYS format code examples inside markdown code blocks with the language specified, like: \`\`\`python
+- Explain each line or section of code clearly in simple terms
+- When debugging, identify the error first, then explain WHY it happened, then show the fix
+- Encourage experimentation: suggest things like "Try changing X and see what happens!"
+- Use simple real-world analogies for beginners: variables = labelled boxes, functions = recipes, loops = repeating a chore
+- After helping with a problem, suggest a fun mini-challenge to extend it
+- Be extra enthusiastic — coding is a superpower!
+- If someone asks to EXIT coding mode or go back to normal, tell them to click the 💻 button in the header.`;
+
 function getSessionId(req: Parameters<Parameters<typeof router.get>[1]>[0]): string | null {
   const sid = req.headers["x-session-id"];
   if (typeof sid === "string" && sid.trim().length > 0) return sid.trim();
@@ -220,7 +234,10 @@ router.post("/openai/conversations/:id/messages", async (req, res) => {
       content: m.content,
     }));
 
-    const systemContent = AVI_SYSTEM_PROMPT;
+    const isCodingMode = req.headers["x-coding-mode"] === "true";
+    const themeId = typeof req.headers["x-theme"] === "string" ? req.headers["x-theme"] : null;
+    const themeExtra = themeId && THEME_INSTRUCTIONS[themeId] ? `\n\n${THEME_INSTRUCTIONS[themeId]}` : "";
+    const systemContent = AVI_SYSTEM_PROMPT + themeExtra + (isCodingMode ? CODING_MODE_PROMPT : "");
 
     res.setHeader("Content-Type", "text/event-stream");
     res.setHeader("Cache-Control", "no-cache");

@@ -1,5 +1,5 @@
 import aviLogo from "@assets/avi_logo_gradient_refined.jpg_1777827450516.jpg";
-import { Bot, Calculator, BookOpen, Laugh, Plane, Target, Globe, Dices, BookMarked, Sparkles, Trophy } from "lucide-react";
+import { Bot, Calculator, BookOpen, Laugh, Plane, Target, Globe, Dices, BookMarked, Sparkles, Trophy, Terminal } from "lucide-react";
 import { ThemeId } from "@/lib/themes";
 import { ReactNode } from "react";
 
@@ -145,6 +145,35 @@ export default function WelcomeScreen({ onSelectAction, themeId }: WelcomeScreen
             </div>
           );
         })}
+      </div>
+
+      {/* Coding Mode — separate from adventure themes */}
+      <div
+        className="mt-3 w-full cursor-pointer rounded-xl border-2 border-green-800/40 bg-gray-950 hover:border-green-500/60 hover:shadow-lg hover:shadow-green-900/20 transition-all duration-200 overflow-hidden group"
+        onClick={() => onSelectAction("coding_mode")}
+      >
+        <div className="flex items-center gap-4 px-5 py-4">
+          <div className="w-10 h-10 rounded-lg bg-green-900/60 border border-green-700/50 flex items-center justify-center flex-shrink-0 group-hover:bg-green-800/70 transition-colors">
+            <Terminal className="w-5 h-5 text-green-400" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 mb-0.5">
+              <h3 className="font-bold text-green-400 text-sm leading-tight">Coding Mode</h3>
+              <span className="text-[10px] font-mono bg-green-900/50 text-green-500 border border-green-800/50 px-1.5 py-0.5 rounded">
+                {'</>'}
+              </span>
+            </div>
+            <p className="text-xs text-gray-400 leading-tight">
+              Activate a coding-focused session with a Matrix-style background. Get help with Python, JavaScript, HTML, and more.
+            </p>
+          </div>
+          <div className="font-mono text-green-600 text-xs hidden sm:block opacity-60 group-hover:opacity-100 transition-opacity">
+            <span className="animate-pulse">█</span>
+          </div>
+        </div>
+        <div className="px-5 pb-3 font-mono text-[10px] text-green-800 group-hover:text-green-700 transition-colors truncate">
+          {'> initializing coding assistant... ready to compile!'}
+        </div>
       </div>
     </div>
   );

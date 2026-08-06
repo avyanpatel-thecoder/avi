@@ -102,3 +102,13 @@ export function saveConvTheme(convId: number, themeId: ThemeId): void {
 export function loadConvTheme(convId: number): ThemeId | null {
   try { return (localStorage.getItem(`${STORAGE_KEY_PREFIX}${convId}`) as ThemeId) || null; } catch { return null; }
 }
+
+const CODING_MODE_KEY_PREFIX = 'avi_coding_mode_conv_';
+
+export function saveCodingMode(convId: number, active: boolean): void {
+  try { localStorage.setItem(`${CODING_MODE_KEY_PREFIX}${convId}`, active ? '1' : '0'); } catch { /* ignore */ }
+}
+
+export function loadCodingMode(convId: number): boolean {
+  try { return localStorage.getItem(`${CODING_MODE_KEY_PREFIX}${convId}`) === '1'; } catch { return false; }
+}

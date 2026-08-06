@@ -21,7 +21,8 @@ import { Send, Loader2, Clock, LayoutGrid, Palette, HeadphonesIcon } from "lucid
 import WikipediaModal from "@/components/wikipedia-modal";
 import GoalGuessModal from "@/components/goalguess-modal";
 import { getSessionId } from "@/lib/session";
-import { ThemeId, getTheme, saveConvTheme, loadConvTheme } from "@/lib/themes";
+import { ThemeId, getTheme, saveConvTheme, loadConvTheme, saveCodingMode, loadCodingMode } from "@/lib/themes";
+import CodingBackground from "@/components/coding-background";
 
 export default function ChatPage() {
   const queryClient = useQueryClient();
@@ -34,6 +35,7 @@ export default function ChatPage() {
   const [showHistory, setShowHistory] = useState(false);
   const [showThemePicker, setShowThemePicker] = useState(false);
   const [selectedTheme, setSelectedTheme] = useState<ThemeId | null>(null);
+  const [isCodingMode, setIsCodingMode] = useState(false);
 
   // Ref to prevent auto-selection when user explicitly starts a new chat
   const newChatMode = useRef(false);
@@ -55,10 +57,11 @@ export default function ChatPage() {
     }
   }, [loadingConversations, conversations]); // eslint-disable-line
 
-  // When active conversation changes from history selection, load its theme
+  // When active conversation changes from history selection, load its theme + coding mode
   useEffect(() => {
     if (activeConversationId) {
       setSelectedTheme(loadConvTheme(activeConversationId));
+      setIsCodingMode(loadCodingMode(activeConversationId));
     }
   }, [activeConversationId]);
 
@@ -131,11 +134,24 @@ export default function ChatPage() {
 
     try {
       const BASE = import.meta.env.BASE_URL;
+      // Detect coding mode toggle from the message text
+      let activeCodingMode = isCodingMode;
+      if (CODING_ACTIVATE.test(content) && !isCodingMode) {
+        activeCodingMode = true;
+        setIsCodingMode(true);
+        if (currentConvId) saveCodingMode(currentConvId, true);
+      } else if (CODING_DEACTIVATE.test(content) && isCodingMode) {
+        activeCodingMode = false;
+        setIsCodingMode(false);
+        if (currentConvId) saveCodingMode(currentConvId, false);
+      }
+
       const headers: Record<string, string> = {
         "Content-Type": "application/json",
         "X-Session-Id": getSessionId(),
       };
       if (selectedTheme) headers["X-Theme"] = selectedTheme;
+      if (activeCodingMode) headers["X-Coding-Mode"] = "true";
 
       const response = await fetch(
         `${BASE}api/openai/conversations/${currentConvId}/messages`,
@@ -194,11 +210,18 @@ export default function ChatPage() {
     }
   };
 
+  const CODING_ACTIVATE = /\b(coding mode|code mode|activate coding|start coding mode|enter coding)\b/i;
+  const CODING_DEACTIVATE = /\b(exit coding|leave coding|deactivate coding|normal mode|exit coding mode)\b/i;
+
   const handleQuickAction = (action: string) => {
     if (action === "wikipedia") {
       setIsWikiModalOpen(true);
     } else if (action === "goalguess") {
       setIsGoalGuessOpen(true);
+    } else if (action === "coding_mode") {
+      setIsCodingMode(true);
+      if (activeConversationId) saveCodingMode(activeConversationId, true);
+      handleSendMessage("Activate coding mode! Let's write some code!");
     } else if (
       action === "random_wikipedia" ||
       action === "Tell me about a random Wikipedia article"
@@ -273,13 +296,16 @@ export default function ChatPage() {
       }
     >
       {/* Animated theme background */}
-      {selectedTheme && <ThemeBackground themeId={selectedTheme} />}
+      {selectedTheme && !isCodingMode && <ThemeBackground themeId={selectedTheme} />}
+      {isCodingMode && <CodingBackground />}
 
       {/* ── Header ── */}
       <header
         className="flex items-center justify-between px-5 py-3 sticky top-0 z-10 shadow-sm"
         style={
-          activeTheme
+          isCodingMode
+            ? { background: "linear-gradient(135deg, #0a0f0a, #052e16, #064e3b)" }
+            : activeTheme
             ? { background: activeTheme.headerGradient }
             : { background: "linear-gradient(135deg, #833AB4, #FD1D1D, #FCB045)" }
         }
@@ -335,6 +361,24 @@ export default function ChatPage() {
             data-testid="button-history"
           >
             <Clock className="h-5 w-5" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => {
+              const next = !isCodingMode;
+              setIsCodingMode(next);
+              if (activeConversationId) saveCodingMode(activeConversationId, next);
+            }}
+            className={`rounded-xl h-9 w-9 font-mono text-xs transition-all ${
+              isCodingMode
+                ? "bg-green-500/20 text-green-300 hover:bg-green-500/30 border border-green-700/50"
+                : "text-white hover:bg-white/25"
+            }`}
+            title={isCodingMode ? "Exit Coding Mode" : "Coding Mode"}
+          >
+            <HeadphonesIcon className="h-5 w-5 sr-only" />
+            <span className="not-sr-only text-[11px] font-bold font-mono">{"</>"}</span>
           </Button>
           <a href={`${import.meta.env.BASE_URL}customersupport`}>
             <Button
