@@ -4,7 +4,7 @@ import { Show, useClerk } from "@clerk/react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { Loader2, Save, UserCircle, LogOut, ArrowLeft, Shield, Sparkles, MessageSquare, Award, GraduationCap, BookOpen, FlaskConical } from "lucide-react";
+import { Loader2, Save, UserCircle, LogOut, ArrowLeft, Shield, Sparkles, MessageSquare, Award, GraduationCap, BookOpen } from "lucide-react";
 
 import {
   useGetAviAccount,
@@ -221,10 +221,10 @@ function PlusDashboard() {
         <section aria-labelledby="plus-activities-heading">
           <div className="mb-4">
             <h2 id="plus-activities-heading" className="text-xl font-bold text-gray-900">
-              Plus Learning Activities
+              Plus-Only Learning Activities
             </h2>
             <p className="text-sm text-gray-500">
-              Start a guided activity made for AVI Plus members.
+              Extra guided tools included with your free AVI Plus account.
             </p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -248,17 +248,6 @@ function PlusDashboard() {
               <span className="text-left">
                 <span className="block font-bold text-gray-900">Story Studio</span>
                 <span className="block text-xs font-normal text-gray-600">Build a story together</span>
-              </span>
-            </Button>
-            <Button
-              variant="outline"
-              className="h-auto min-h-28 justify-start gap-3 p-4 border-emerald-200 bg-emerald-50/60 hover:bg-emerald-100/70"
-              onClick={() => launchActivity("AVI Plus Science Lab: Suggest a safe, simple science activity using common household items, with adult supervision notes and an explanation of the science.")}
-            >
-              <FlaskConical className="h-6 w-6 text-emerald-700" />
-              <span className="text-left">
-                <span className="block font-bold text-gray-900">Science Lab</span>
-                <span className="block text-xs font-normal text-gray-600">Try a safe experiment</span>
               </span>
             </Button>
           </div>

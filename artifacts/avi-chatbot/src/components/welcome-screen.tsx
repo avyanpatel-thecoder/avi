@@ -1,5 +1,5 @@
 import aviLogo from "@assets/avi_logo_gradient_refined.jpg_1777827450516.jpg";
-import { Bot, Calculator, BookOpen, Laugh, Plane, Target, Globe, Dices, BookMarked, Sparkles, Trophy, Terminal, Rocket } from "lucide-react";
+import { Bot, Calculator, BookOpen, Laugh, Plane, Target, Globe, Dices, BookMarked, Sparkles, Trophy, Terminal, Rocket, FlaskConical } from "lucide-react";
 import { ThemeId } from "@/lib/themes";
 import { ReactNode } from "react";
 import BadgeShelf from "@/components/badge-shelf";
@@ -80,6 +80,14 @@ const features: FeatureDef[] = [
     action: "Let's play a trivia game!",
     bg: "bg-green-50", border: "border-green-200", iconBg: "bg-green-100", iconColor: "text-green-600",
     themedIcons: { magic: "🎩", space: "☄️", monster: "🏆", silly: "🎉", jungle: "🦅", ocean: "🦀" },
+  },
+  {
+    defaultIcon: <FlaskConical className="w-5 h-5" />,
+    title: "Science Lab",
+    description: "Try a safe experiment",
+    action: "Science Lab: Suggest a safe, simple science activity using common household items, with adult supervision notes and an explanation of the science.",
+    bg: "bg-emerald-50", border: "border-emerald-200", iconBg: "bg-emerald-100", iconColor: "text-emerald-600",
+    themedIcons: { magic: "🧪", space: "🔬", monster: "⚗️", silly: "🧫", jungle: "🌿", ocean: "🐙" },
   },
   {
     defaultIcon: <Globe className="w-5 h-5" />,
