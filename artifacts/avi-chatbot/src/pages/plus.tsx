@@ -4,7 +4,7 @@ import { Show, useClerk } from "@clerk/react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { Loader2, Save, UserCircle, LogOut, ArrowLeft, Shield, Sparkles, MessageSquare, Award, GraduationCap, BookOpen } from "lucide-react";
+import { Loader2, Save, UserCircle, LogOut, ArrowLeft, Shield, Sparkles, MessageSquare, Award, GraduationCap, BookOpen, ClipboardList, Brain } from "lucide-react";
 
 import {
   useGetAviAccount,
@@ -227,7 +227,7 @@ function PlusDashboard() {
               Extra guided tools included with your free AVI Plus account.
             </p>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <Button
               variant="outline"
               className="h-auto min-h-28 justify-start gap-3 p-4 border-purple-200 bg-purple-50/60 hover:bg-purple-100/70"
@@ -248,6 +248,28 @@ function PlusDashboard() {
               <span className="text-left">
                 <span className="block font-bold text-gray-900">Story Studio</span>
                 <span className="block text-xs font-normal text-gray-600">Build a story together</span>
+              </span>
+            </Button>
+            <Button
+              variant="outline"
+              className="h-auto min-h-28 justify-start gap-3 p-4 border-blue-200 bg-blue-50/60 hover:bg-blue-100/70"
+              onClick={() => launchActivity("AVI Plus Personal Study Plan: Ask me what I want to learn, then create a short personalized study plan with small steps and encouraging check-ins.")}
+            >
+              <ClipboardList className="h-6 w-6 text-blue-700" />
+              <span className="text-left">
+                <span className="block font-bold text-gray-900">Personal Study Plan</span>
+                <span className="block text-xs font-normal text-gray-600">Make a plan that fits you</span>
+              </span>
+            </Button>
+            <Button
+              variant="outline"
+              className="h-auto min-h-28 justify-start gap-3 p-4 border-indigo-200 bg-indigo-50/60 hover:bg-indigo-100/70"
+              onClick={() => launchActivity("AVI Plus Quiz Builder: Ask me for a topic and age level, then build a fun quiz one question at a time with hints and a score at the end.")}
+            >
+              <Brain className="h-6 w-6 text-indigo-700" />
+              <span className="text-left">
+                <span className="block font-bold text-gray-900">Quiz Builder</span>
+                <span className="block text-xs font-normal text-gray-600">Create a quiz just for you</span>
               </span>
             </Button>
           </div>
