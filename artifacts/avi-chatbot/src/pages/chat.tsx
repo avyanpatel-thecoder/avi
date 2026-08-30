@@ -25,9 +25,14 @@ import { ThemeId, getTheme, saveConvTheme, loadConvTheme, saveCodingMode, loadCo
 import CodingBackground from "@/components/coding-background";
 import { useAchievements } from "@/hooks/use-achievements";
 import { AchievementToastStack } from "@/components/achievement-toast";
+import { Link } from "wouter";
+import { Show, useAuth } from "@clerk/react";
+import { useToast } from "@/hooks/use-toast";
 
 export default function ChatPage() {
   const queryClient = useQueryClient();
+  const { getToken } = useAuth();
+  const { toast } = useToast();
   const { data: conversations = [], isLoading: loadingConversations } =
     useListOpenaiConversations();
   const createConversation = useCreateOpenaiConversation();
@@ -43,6 +48,7 @@ export default function ChatPage() {
 
   // Ref to prevent auto-selection when user explicitly starts a new chat
   const newChatMode = useRef(false);
+  const plusLaunchHandled = useRef(false);
 
   // On first load: auto-select most recent conversation or show theme picker
   useEffect(() => {
@@ -168,11 +174,23 @@ export default function ChatPage() {
       };
       if (selectedTheme) headers["X-Theme"] = selectedTheme;
       if (activeCodingMode) headers["X-Coding-Mode"] = "true";
+      const token = await getToken();
+      if (token) headers.Authorization = `Bearer ${token}`;
 
       const response = await fetch(
         `${BASE}api/openai/conversations/${currentConvId}/messages`,
         { method: "POST", headers, body: JSON.stringify({ content }) }
       );
+      if (!response.ok) {
+        const errorBody = await response
+          .json()
+          .catch(() => ({ error: "AVI could not send your message." }));
+        const message =
+          typeof errorBody?.error === "string"
+            ? errorBody.error
+            : "AVI could not send your message.";
+        throw new Error(message);
+      }
 
       const reader = response.body?.getReader();
       const decoder = new TextDecoder();
@@ -211,13 +229,32 @@ export default function ChatPage() {
       queryClient.invalidateQueries({
         queryKey: getGetOpenaiConversationQueryKey(currentConvId),
       });
-    } catch {
-      // ignore network errors
+    } catch (error) {
+      queryClient.invalidateQueries({
+        queryKey: getListOpenaiMessagesQueryKey(currentConvId),
+      });
+      toast({
+        title: "Message not sent",
+        description:
+          error instanceof Error
+            ? error.message
+            : "Please try again in a moment.",
+        variant: "destructive",
+      });
     } finally {
       setIsStreaming(false);
       setStreamingContent("");
     }
   };
+
+  useEffect(() => {
+    if (plusLaunchHandled.current) return;
+    const launchPrompt = sessionStorage.getItem("avi_plus_launch");
+    if (!launchPrompt) return;
+    plusLaunchHandled.current = true;
+    sessionStorage.removeItem("avi_plus_launch");
+    void handleSendMessage(launchPrompt);
+  }, []);
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter" && !e.shiftKey) {
@@ -407,7 +444,7 @@ export default function ChatPage() {
             <HeadphonesIcon className="h-5 w-5 sr-only" />
             <span className="not-sr-only text-[11px] font-bold font-mono">{"</>"}</span>
           </Button>
-          <a href={`${import.meta.env.BASE_URL}customersupport`}>
+          <Link href="/customersupport">
             <Button
               variant="ghost"
               size="icon"
@@ -416,7 +453,29 @@ export default function ChatPage() {
             >
               <HeadphonesIcon className="h-5 w-5" />
             </Button>
-          </a>
+          </Link>
+          <Show when="signed-in">
+            <Link href="/plus">
+              <Button
+                variant="ghost"
+                className="bg-white/20 hover:bg-white/30 text-white border border-white/40 rounded-xl h-9 px-3 text-xs font-bold shadow-sm transition-all"
+                title="AVI Plus Account"
+              >
+                AVI Plus
+              </Button>
+            </Link>
+          </Show>
+          <Show when="signed-out">
+            <Link href="/sign-up">
+              <Button
+                variant="ghost"
+                className="bg-gradient-to-r from-purple-500 to-orange-400 hover:from-purple-400 hover:to-orange-300 text-white border-0 rounded-xl h-9 px-3 text-xs font-bold shadow-sm transition-all shadow-purple-900/20"
+                title="Get AVI Plus (Free)"
+              >
+                Get Plus
+              </Button>
+            </Link>
+          </Show>
         </div>
       </header>
 

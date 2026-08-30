@@ -3,7 +3,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Search, Loader2, ExternalLink } from "lucide-react";
-import { useSearchWikipedia } from "@workspace/api-client-react";
+import { useSearchWikipedia, getSearchWikipediaQueryKey } from "@workspace/api-client-react";
 
 interface WikipediaModalProps {
   isOpen: boolean;
@@ -20,6 +20,7 @@ export default function WikipediaModal({ isOpen, onClose, onInsert }: WikipediaM
     {
       query: {
         enabled: debouncedQuery.length > 2,
+        queryKey: getSearchWikipediaQueryKey({ query: debouncedQuery }),
       },
     }
   );
@@ -100,10 +101,9 @@ export default function WikipediaModal({ isOpen, onClose, onInsert }: WikipediaM
                     <ExternalLink className="w-4 h-4" />
                   </a>
                 </div>
-                <p 
-                  className="text-sm text-gray-600 leading-relaxed"
-                  dangerouslySetInnerHTML={{ __fit_html_this_is_unsafe: result.snippet }} 
-                />
+                <p className="text-sm text-gray-600 leading-relaxed">
+                  {result.snippet}
+                </p>
               </div>
             ))}
           </div>

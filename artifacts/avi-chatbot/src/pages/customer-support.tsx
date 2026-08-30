@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { ReactNode, useState } from "react";
 import { Link } from "wouter";
 import {
   MessageCircle,
@@ -88,7 +88,7 @@ const faqs: FAQ[] = [
 
 const categories = ["All", "Getting Started", "Features", "Safety", "Technical"];
 
-const categoryIcons: Record<string, JSX.Element> = {
+const categoryIcons: Record<string, ReactNode> = {
   "Getting Started": <Zap className="w-4 h-4" />,
   Features: <BookOpen className="w-4 h-4" />,
   Safety: <Shield className="w-4 h-4" />,

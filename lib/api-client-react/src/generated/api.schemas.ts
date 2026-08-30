@@ -58,6 +58,67 @@ export interface WikipediaArticle {
   url: string;
 }
 
+export type AviAchievementStateCounters = { [key: string]: number };
+
+export interface AviAchievementState {
+  unlockedIds: string[];
+  counters: AviAchievementStateCounters;
+}
+
+export interface AviAccountStats {
+  conversationCount: number;
+  messageCount: number;
+}
+
+export interface AviAccount {
+  id: number;
+  aviName: string;
+  avatar: string;
+  profileBio: string;
+  isPlus: boolean;
+  parentModeEnabled: boolean;
+  dailyLimit: number;
+  dailyMessageCount: number;
+  achievementState: AviAchievementState;
+  stats: AviAccountStats;
+}
+
+export interface UpdateAviProfileBody {
+  /**
+   * @minLength 1
+   * @maxLength 30
+   */
+  aviName?: string;
+  /**
+   * @minLength 1
+   * @maxLength 12
+   */
+  avatar?: string;
+  /** @maxLength 160 */
+  profileBio?: string;
+}
+
+export interface UpdateAviSettingsBody {
+  parentModeEnabled?: boolean;
+  /**
+   * @minimum 20
+   * @maximum 500
+   */
+  dailyLimit?: number;
+}
+
+export type LinkAnonymousAviSession200 = {
+  linkedCount: number;
+};
+
+export type SyncAviAchievementsBody = {
+  achievementState: AviAchievementState;
+};
+
+export type SyncAviAchievements200 = {
+  achievementState: AviAchievementState;
+};
+
 export type SearchWikipediaParams = {
   query: string;
 };

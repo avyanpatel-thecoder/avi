@@ -7,10 +7,11 @@ const WIKIPEDIA_API = "https://en.wikipedia.org/api/rest_v1";
 const WIKIPEDIA_SEARCH_API = "https://en.wikipedia.org/w/api.php";
 
 // Search Wikipedia
-router.get("/avi/wikipedia/search", async (req, res) => {
+router.get("/avi/wikipedia/search", async (req, res): Promise<void> => {
   const parsed = SearchWikipediaQueryParams.safeParse(req.query);
   if (!parsed.success) {
-    return res.status(400).json({ error: "Missing or invalid query" });
+    res.status(400).json({ error: "Missing or invalid query" });
+    return;
   }
 
   const { query } = parsed.data;
@@ -46,10 +47,11 @@ router.get("/avi/wikipedia/search", async (req, res) => {
 });
 
 // Get random Wikipedia article (optionally on a topic)
-router.get("/avi/wikipedia/random", async (req, res) => {
+router.get("/avi/wikipedia/random", async (req, res): Promise<void> => {
   const parsed = GetRandomWikipediaQueryParams.safeParse(req.query);
   if (!parsed.success) {
-    return res.status(400).json({ error: "Invalid request" });
+    res.status(400).json({ error: "Invalid request" });
+    return;
   }
 
   const { topic } = parsed.data;
@@ -75,18 +77,20 @@ router.get("/avi/wikipedia/random", async (req, res) => {
 
       const results = searchData.query?.search ?? [];
       if (results.length === 0) {
-        return res.status(404).json({ error: "No articles found for topic" });
+        res.status(404).json({ error: "No articles found for topic" });
+        return;
       }
 
       // Pick a random article from the results
       const randomItem = results[Math.floor(Math.random() * results.length)];
       const summary = randomItem.snippet.replace(/<[^>]*>/g, "");
 
-      return res.json({
+      res.json({
         title: randomItem.title,
         summary,
         url: `https://en.wikipedia.org/wiki/${encodeURIComponent(randomItem.title.replace(/ /g, "_"))}`,
       });
+      return;
     } else {
       // Get a truly random Wikipedia article
       const response = await fetch(`${WIKIPEDIA_API}/page/random/summary`);
@@ -96,11 +100,12 @@ router.get("/avi/wikipedia/random", async (req, res) => {
         content_urls?: { desktop?: { page?: string } }
       };
 
-      return res.json({
+      res.json({
         title: data.title,
         summary: data.extract ?? "",
         url: data.content_urls?.desktop?.page ?? `https://en.wikipedia.org/wiki/${encodeURIComponent(data.title)}`,
       });
+      return;
     }
   } catch (err) {
     req.log.error({ err }, "Wikipedia random failed");

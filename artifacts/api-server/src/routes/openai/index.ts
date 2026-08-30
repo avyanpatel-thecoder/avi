@@ -1,8 +1,8 @@
 import { Router } from "express";
 import { openai } from "@workspace/integrations-openai-ai-server";
 import { db } from "@workspace/db";
-import { conversations, messages } from "@workspace/db";
-import { and, eq } from "drizzle-orm";
+import { aviAccounts, conversations, messages } from "@workspace/db";
+import { and, eq, isNull, lt, ne, or, sql } from "drizzle-orm";
 import {
   CreateOpenaiConversationBody,
   GetOpenaiConversationParams,
@@ -11,6 +11,7 @@ import {
   SendOpenaiMessageParams,
   SendOpenaiMessageBody,
 } from "@workspace/api-zod";
+import { getClerkUserId } from "../../lib/auth";
 
 const router = Router();
 
@@ -89,17 +90,40 @@ function getSessionId(req: Parameters<Parameters<typeof router.get>[1]>[0]): str
   return null;
 }
 
-// List conversations for this session
-router.get("/openai/conversations", async (req, res) => {
+function conversationScope(
+  req: Parameters<Parameters<typeof router.get>[1]>[0],
+  id?: number,
+) {
+  const userId = getClerkUserId(req);
+  if (userId) {
+    return id === undefined
+      ? eq(conversations.ownerUserId, userId)
+      : and(eq(conversations.id, id), eq(conversations.ownerUserId, userId));
+  }
+
   const sessionId = getSessionId(req);
-  if (!sessionId) {
-    return res.json([]);
+  if (!sessionId) return null;
+  return id === undefined
+    ? and(eq(conversations.sessionId, sessionId), isNull(conversations.ownerUserId))
+    : and(
+        eq(conversations.id, id),
+        eq(conversations.sessionId, sessionId),
+        isNull(conversations.ownerUserId),
+      );
+}
+
+// List conversations for this session
+router.get("/openai/conversations", async (req, res): Promise<void> => {
+  const scope = conversationScope(req);
+  if (!scope) {
+    res.json([]);
+    return;
   }
   try {
     const allConversations = await db
       .select()
       .from(conversations)
-      .where(eq(conversations.sessionId, sessionId))
+      .where(scope)
       .orderBy(conversations.createdAt);
     res.json(allConversations);
   } catch (err) {
@@ -109,19 +133,25 @@ router.get("/openai/conversations", async (req, res) => {
 });
 
 // Create a conversation
-router.post("/openai/conversations", async (req, res) => {
+router.post("/openai/conversations", async (req, res): Promise<void> => {
   const sessionId = getSessionId(req);
   if (!sessionId) {
-    return res.status(400).json({ error: "Missing session ID" });
+    res.status(400).json({ error: "Missing session ID" });
+    return;
   }
   const parsed = CreateOpenaiConversationBody.safeParse(req.body);
   if (!parsed.success) {
-    return res.status(400).json({ error: "Invalid request body" });
+    res.status(400).json({ error: "Invalid request body" });
+    return;
   }
   try {
     const [conv] = await db
       .insert(conversations)
-      .values({ title: parsed.data.title, sessionId })
+      .values({
+        title: parsed.data.title,
+        sessionId,
+        ownerUserId: getClerkUserId(req),
+      })
       .returning();
     res.status(201).json(conv);
   } catch (err) {
@@ -131,19 +161,27 @@ router.post("/openai/conversations", async (req, res) => {
 });
 
 // Get conversation (scoped to session)
-router.get("/openai/conversations/:id", async (req, res) => {
-  const sessionId = getSessionId(req);
-  if (!sessionId) return res.status(400).json({ error: "Missing session ID" });
-
+router.get("/openai/conversations/:id", async (req, res): Promise<void> => {
   const parsed = GetOpenaiConversationParams.safeParse(req.params);
-  if (!parsed.success) return res.status(400).json({ error: "Invalid id" });
+  if (!parsed.success) {
+    res.status(400).json({ error: "Invalid id" });
+    return;
+  }
+  const scope = conversationScope(req, parsed.data.id);
+  if (!scope) {
+    res.status(400).json({ error: "Missing session ID" });
+    return;
+  }
 
   try {
     const [conv] = await db
       .select()
       .from(conversations)
-      .where(and(eq(conversations.id, parsed.data.id), eq(conversations.sessionId, sessionId)));
-    if (!conv) return res.status(404).json({ error: "Conversation not found" });
+      .where(scope);
+    if (!conv) {
+      res.status(404).json({ error: "Conversation not found" });
+      return;
+    }
 
     const msgs = await db
       .select()
@@ -159,19 +197,27 @@ router.get("/openai/conversations/:id", async (req, res) => {
 });
 
 // Delete conversation (scoped to session)
-router.delete("/openai/conversations/:id", async (req, res) => {
-  const sessionId = getSessionId(req);
-  if (!sessionId) return res.status(400).json({ error: "Missing session ID" });
-
+router.delete("/openai/conversations/:id", async (req, res): Promise<void> => {
   const parsed = DeleteOpenaiConversationParams.safeParse(req.params);
-  if (!parsed.success) return res.status(400).json({ error: "Invalid id" });
+  if (!parsed.success) {
+    res.status(400).json({ error: "Invalid id" });
+    return;
+  }
+  const scope = conversationScope(req, parsed.data.id);
+  if (!scope) {
+    res.status(400).json({ error: "Missing session ID" });
+    return;
+  }
 
   try {
     const deleted = await db
       .delete(conversations)
-      .where(and(eq(conversations.id, parsed.data.id), eq(conversations.sessionId, sessionId)))
+      .where(scope)
       .returning();
-    if (!deleted.length) return res.status(404).json({ error: "Not found" });
+    if (!deleted.length) {
+      res.status(404).json({ error: "Not found" });
+      return;
+    }
     res.status(204).end();
   } catch (err) {
     req.log.error({ err }, "Failed to delete conversation");
@@ -180,11 +226,27 @@ router.delete("/openai/conversations/:id", async (req, res) => {
 });
 
 // List messages (no extra session check needed — conversation ownership already enforced above)
-router.get("/openai/conversations/:id/messages", async (req, res) => {
+router.get("/openai/conversations/:id/messages", async (req, res): Promise<void> => {
   const parsed = ListOpenaiMessagesParams.safeParse(req.params);
-  if (!parsed.success) return res.status(400).json({ error: "Invalid id" });
+  if (!parsed.success) {
+    res.status(400).json({ error: "Invalid id" });
+    return;
+  }
+  const scope = conversationScope(req, parsed.data.id);
+  if (!scope) {
+    res.status(400).json({ error: "Missing session ID" });
+    return;
+  }
 
   try {
+    const [ownedConversation] = await db
+      .select({ id: conversations.id })
+      .from(conversations)
+      .where(scope);
+    if (!ownedConversation) {
+      res.status(404).json({ error: "Conversation not found" });
+      return;
+    }
     const msgs = await db
       .select()
       .from(messages)
@@ -198,29 +260,89 @@ router.get("/openai/conversations/:id/messages", async (req, res) => {
 });
 
 // Send message (SSE streaming) — scoped to session
-router.post("/openai/conversations/:id/messages", async (req, res) => {
-  const sessionId = getSessionId(req);
-  if (!sessionId) return res.status(400).json({ error: "Missing session ID" });
-
+router.post("/openai/conversations/:id/messages", async (req, res): Promise<void> => {
   const paramsParsed = SendOpenaiMessageParams.safeParse(req.params);
-  if (!paramsParsed.success)
-    return res.status(400).json({ error: "Invalid id" });
+  if (!paramsParsed.success) {
+    res.status(400).json({ error: "Invalid id" });
+    return;
+  }
 
   const bodyParsed = SendOpenaiMessageBody.safeParse(req.body);
-  if (!bodyParsed.success)
-    return res.status(400).json({ error: "Invalid request body" });
+  if (!bodyParsed.success) {
+    res.status(400).json({ error: "Invalid request body" });
+    return;
+  }
 
   const { id } = paramsParsed.data;
   const { content } = bodyParsed.data;
+  const scope = conversationScope(req, id);
+  if (!scope) {
+    res.status(400).json({ error: "Missing session ID" });
+    return;
+  }
 
   // Verify the conversation belongs to this session
   const [conv] = await db
     .select()
     .from(conversations)
-    .where(and(eq(conversations.id, id), eq(conversations.sessionId, sessionId)));
-  if (!conv) return res.status(404).json({ error: "Conversation not found" });
+    .where(scope);
+  if (!conv) {
+    res.status(404).json({ error: "Conversation not found" });
+    return;
+  }
 
   try {
+    const userId = getClerkUserId(req);
+    let parentModeEnabled = false;
+    if (userId) {
+      await db
+        .insert(aviAccounts)
+        .values({
+          clerkUserId: userId,
+          achievementState: { unlockedIds: [], counters: {} },
+        })
+        .onConflictDoNothing({ target: aviAccounts.clerkUserId });
+
+      const today = new Date().toISOString().slice(0, 10);
+      const [quota] = await db
+        .update(aviAccounts)
+        .set({
+          dailyMessageDate: today,
+          dailyMessageCount: sql<number>`
+            CASE
+              WHEN ${aviAccounts.dailyMessageDate} = ${today}
+              THEN ${aviAccounts.dailyMessageCount} + 1
+              ELSE 1
+            END
+          `,
+        })
+        .where(
+          and(
+            eq(aviAccounts.clerkUserId, userId),
+            or(
+              isNull(aviAccounts.dailyMessageDate),
+              ne(aviAccounts.dailyMessageDate, today),
+              lt(aviAccounts.dailyMessageCount, aviAccounts.dailyLimit),
+            ),
+          ),
+        )
+        .returning({
+          parentModeEnabled: aviAccounts.parentModeEnabled,
+        });
+
+      if (!quota) {
+        const [account] = await db
+          .select({ dailyLimit: aviAccounts.dailyLimit })
+          .from(aviAccounts)
+          .where(eq(aviAccounts.clerkUserId, userId))
+          .limit(1);
+        res.status(429).json({
+          error: `You have reached today's AVI Plus limit of ${account?.dailyLimit ?? 100} messages.`,
+        });
+        return;
+      }
+      parentModeEnabled = quota.parentModeEnabled === "true";
+    }
     await db.insert(messages).values({ conversationId: id, role: "user", content });
 
     const history = await db
@@ -237,7 +359,14 @@ router.post("/openai/conversations/:id/messages", async (req, res) => {
     const isCodingMode = req.headers["x-coding-mode"] === "true";
     const themeId = typeof req.headers["x-theme"] === "string" ? req.headers["x-theme"] : null;
     const themeExtra = themeId && THEME_INSTRUCTIONS[themeId] ? `\n\n${THEME_INSTRUCTIONS[themeId]}` : "";
-    const systemContent = AVI_SYSTEM_PROMPT + themeExtra + (isCodingMode ? CODING_MODE_PROMPT : "");
+    const parentExtra = parentModeEnabled
+      ? "\n\nPARENT MODE ACTIVE: Use especially conservative, school-safe language. Do not ask for personal details, avoid external links unless essential, and redirect any risky or mature topic toward a safe educational alternative."
+      : "";
+    const systemContent =
+      AVI_SYSTEM_PROMPT +
+      themeExtra +
+      (isCodingMode ? CODING_MODE_PROMPT : "") +
+      parentExtra;
 
     res.setHeader("Content-Type", "text/event-stream");
     res.setHeader("Cache-Control", "no-cache");

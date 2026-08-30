@@ -14,6 +14,8 @@ tags:
     description: OpenAI AI chat operations
   - name: avi
     description: AVI chatbot specific operations
+  - name: account
+    description: AVI Plus account operations
 paths:
   /healthz:
     get:
@@ -143,6 +145,106 @@ paths:
           description: SSE stream of assistant text chunks
           content:
             text/event-stream: {}
+  /account/me:
+    get:
+      operationId: getAviAccount
+      tags: [account]
+      summary: Get the signed-in AVI Plus account
+      responses:
+        "200":
+          description: AVI Plus account
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AviAccount"
+        "401":
+          description: Authentication required
+  /account/profile:
+    patch:
+      operationId: updateAviProfile
+      tags: [account]
+      summary: Update AVI Plus profile details
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateAviProfileBody"
+      responses:
+        "200":
+          description: Updated AVI Plus account
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AviAccount"
+        "401":
+          description: Authentication required
+  /account/settings:
+    patch:
+      operationId: updateAviSettings
+      tags: [account]
+      summary: Update AVI Plus parent settings
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateAviSettingsBody"
+      responses:
+        "200":
+          description: Updated AVI Plus account
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AviAccount"
+        "401":
+          description: Authentication required
+  /account/link-anonymous:
+    post:
+      operationId: linkAnonymousAviSession
+      tags: [account]
+      summary: Link the current anonymous browser session to the signed-in account
+      responses:
+        "200":
+          description: Link result
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  linkedCount:
+                    type: integer
+                required: [linkedCount]
+        "401":
+          description: Authentication required
+  /account/achievements/sync:
+    post:
+      operationId: syncAviAchievements
+      tags: [account]
+      summary: Merge browser achievements into the signed-in account
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                achievementState:
+                  $ref: "#/components/schemas/AviAchievementState"
+              required: [achievementState]
+      responses:
+        "200":
+          description: Merged achievement state
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  achievementState:
+                    $ref: "#/components/schemas/AviAchievementState"
+                required: [achievementState]
+        "401":
+          description: Authentication required
   /avi/wikipedia/search:
     get:
       operationId: searchWikipedia
@@ -297,3 +399,84 @@ components:
         - title
         - summary
         - url
+    AviAchievementState:
+      type: object
+      properties:
+        unlockedIds:
+          type: array
+          items:
+            type: string
+        counters:
+          type: object
+          additionalProperties:
+            type: integer
+      required:
+        - unlockedIds
+        - counters
+    AviAccountStats:
+      type: object
+      properties:
+        conversationCount:
+          type: integer
+        messageCount:
+          type: integer
+      required:
+        - conversationCount
+        - messageCount
+    AviAccount:
+      type: object
+      properties:
+        id:
+          type: integer
+        aviName:
+          type: string
+        avatar:
+          type: string
+        profileBio:
+          type: string
+        isPlus:
+          type: boolean
+        parentModeEnabled:
+          type: boolean
+        dailyLimit:
+          type: integer
+        dailyMessageCount:
+          type: integer
+        achievementState:
+          $ref: "#/components/schemas/AviAchievementState"
+        stats:
+          $ref: "#/components/schemas/AviAccountStats"
+      required:
+        - id
+        - aviName
+        - avatar
+        - profileBio
+        - isPlus
+        - parentModeEnabled
+        - dailyLimit
+        - dailyMessageCount
+        - achievementState
+        - stats
+    UpdateAviProfileBody:
+      type: object
+      properties:
+        aviName:
+          type: string
+          minLength: 1
+          maxLength: 30
+        avatar:
+          type: string
+          minLength: 1
+          maxLength: 12
+        profileBio:
+          type: string
+          maxLength: 160
+    UpdateAviSettingsBody:
+      type: object
+      properties:
+        parentModeEnabled:
+          type: boolean
+        dailyLimit:
+          type: integer
+          minimum: 20
+          maximum: 500

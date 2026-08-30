@@ -93,6 +93,120 @@ export const SendOpenaiMessageBody = zod.object({
 });
 
 /**
+ * @summary Get the signed-in AVI Plus account
+ */
+export const GetAviAccountResponse = zod.object({
+  id: zod.number(),
+  aviName: zod.string(),
+  avatar: zod.string(),
+  profileBio: zod.string(),
+  isPlus: zod.boolean(),
+  parentModeEnabled: zod.boolean(),
+  dailyLimit: zod.number(),
+  dailyMessageCount: zod.number(),
+  achievementState: zod.object({
+    unlockedIds: zod.array(zod.string()),
+    counters: zod.record(zod.string(), zod.number()),
+  }),
+  stats: zod.object({
+    conversationCount: zod.number(),
+    messageCount: zod.number(),
+  }),
+});
+
+/**
+ * @summary Update AVI Plus profile details
+ */
+export const updateAviProfileBodyAviNameMax = 30;
+
+export const updateAviProfileBodyAvatarMax = 12;
+
+export const updateAviProfileBodyProfileBioMax = 160;
+
+export const UpdateAviProfileBody = zod.object({
+  aviName: zod.string().min(1).max(updateAviProfileBodyAviNameMax).optional(),
+  avatar: zod.string().min(1).max(updateAviProfileBodyAvatarMax).optional(),
+  profileBio: zod.string().max(updateAviProfileBodyProfileBioMax).optional(),
+});
+
+export const UpdateAviProfileResponse = zod.object({
+  id: zod.number(),
+  aviName: zod.string(),
+  avatar: zod.string(),
+  profileBio: zod.string(),
+  isPlus: zod.boolean(),
+  parentModeEnabled: zod.boolean(),
+  dailyLimit: zod.number(),
+  dailyMessageCount: zod.number(),
+  achievementState: zod.object({
+    unlockedIds: zod.array(zod.string()),
+    counters: zod.record(zod.string(), zod.number()),
+  }),
+  stats: zod.object({
+    conversationCount: zod.number(),
+    messageCount: zod.number(),
+  }),
+});
+
+/**
+ * @summary Update AVI Plus parent settings
+ */
+export const updateAviSettingsBodyDailyLimitMin = 20;
+export const updateAviSettingsBodyDailyLimitMax = 500;
+
+export const UpdateAviSettingsBody = zod.object({
+  parentModeEnabled: zod.boolean().optional(),
+  dailyLimit: zod
+    .number()
+    .min(updateAviSettingsBodyDailyLimitMin)
+    .max(updateAviSettingsBodyDailyLimitMax)
+    .optional(),
+});
+
+export const UpdateAviSettingsResponse = zod.object({
+  id: zod.number(),
+  aviName: zod.string(),
+  avatar: zod.string(),
+  profileBio: zod.string(),
+  isPlus: zod.boolean(),
+  parentModeEnabled: zod.boolean(),
+  dailyLimit: zod.number(),
+  dailyMessageCount: zod.number(),
+  achievementState: zod.object({
+    unlockedIds: zod.array(zod.string()),
+    counters: zod.record(zod.string(), zod.number()),
+  }),
+  stats: zod.object({
+    conversationCount: zod.number(),
+    messageCount: zod.number(),
+  }),
+});
+
+/**
+ * @summary Link the current anonymous browser session to the signed-in account
+ */
+export const LinkAnonymousAviSessionResponse = zod.object({
+  linkedCount: zod.number(),
+});
+
+/**
+ * @summary Merge browser achievements into the signed-in account
+ */
+export const SyncAviAchievementsBody = zod.object({
+  achievementState: zod.object({
+    unlockedIds: zod.array(zod.string()),
+    counters: zod.record(zod.string(), zod.number()),
+  }),
+});
+
+export const SyncAviAchievementsResponse = zod.object({
+  achievementState: zod.object({
+    unlockedIds: zod.array(zod.string()),
+    counters: zod.record(zod.string(), zod.number()),
+  }),
+});
+
+/**
  * @summary Search Wikipedia for a topic
  */
 export const SearchWikipediaQueryParams = zod.object({

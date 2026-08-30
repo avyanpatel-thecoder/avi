@@ -145,6 +145,11 @@ export function loadAchievements(): AchievementState {
 export function saveAchievements(state: AchievementState): void {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    window.dispatchEvent(
+      new CustomEvent<AchievementState>("avi-achievements-changed", {
+        detail: state,
+      }),
+    );
   } catch {
     /* ignore storage errors */
   }

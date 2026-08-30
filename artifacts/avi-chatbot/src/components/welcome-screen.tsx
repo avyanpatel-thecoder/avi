@@ -1,8 +1,10 @@
 import aviLogo from "@assets/avi_logo_gradient_refined.jpg_1777827450516.jpg";
-import { Bot, Calculator, BookOpen, Laugh, Plane, Target, Globe, Dices, BookMarked, Sparkles, Trophy, Terminal } from "lucide-react";
+import { Bot, Calculator, BookOpen, Laugh, Plane, Target, Globe, Dices, BookMarked, Sparkles, Trophy, Terminal, Rocket } from "lucide-react";
 import { ThemeId } from "@/lib/themes";
 import { ReactNode } from "react";
 import BadgeShelf from "@/components/badge-shelf";
+import { Show } from "@clerk/react";
+import { Link } from "wouter";
 
 interface WelcomeScreenProps {
   onSelectAction: (action: string) => void;
@@ -177,6 +179,30 @@ export default function WelcomeScreen({ onSelectAction, themeId, unlockedIds = [
           {'> initializing coding assistant... ready to compile!'}
         </div>
       </div>
+
+      <Show when="signed-out">
+        <Link href="/sign-up">
+          <div className="mt-3 w-full cursor-pointer rounded-xl border-2 border-purple-200 bg-gradient-to-br from-purple-50 to-orange-50 hover:shadow-lg hover:shadow-purple-500/10 hover:border-purple-300 transition-all duration-200 overflow-hidden group p-5 flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-full bg-gradient-to-br from-purple-500 to-orange-400 flex items-center justify-center flex-shrink-0 shadow-md">
+                <Rocket className="w-6 h-6 text-white" />
+              </div>
+              <div className="flex flex-col">
+                <h3 className="font-bold text-gray-900 flex items-center gap-2">
+                  Get AVI Plus for Free!
+                  <span className="bg-purple-100 text-purple-700 text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full">New</span>
+                </h3>
+                <p className="text-sm text-gray-600 max-w-lg mt-0.5">
+                  Save your chat history, earn permanent badges, and let parents set daily limits. 100% free forever.
+                </p>
+              </div>
+            </div>
+            <div className="hidden md:block">
+              <span className="text-purple-600 font-bold group-hover:translate-x-1 transition-transform inline-block">Create Account &rarr;</span>
+            </div>
+          </div>
+        </Link>
+      </Show>
 
       {/* Badge shelf */}
       <BadgeShelf unlockedIds={unlockedIds} />

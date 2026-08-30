@@ -39,3 +39,6 @@ externalPort = 3000
 
 [userenv.shared]
 SUPPORT_EMAIL = "avyan.s.patel@gmail.com"
+
+[nix]
+channel = "stable-25_05"

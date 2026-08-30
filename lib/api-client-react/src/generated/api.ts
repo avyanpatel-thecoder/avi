@@ -17,15 +17,21 @@ import type {
 } from "@tanstack/react-query";
 
 import type {
+  AviAccount,
   CreateOpenaiConversationBody,
   GetRandomWikipediaParams,
   HealthStatus,
+  LinkAnonymousAviSession200,
   OpenaiConversation,
   OpenaiConversationWithMessages,
   OpenaiError,
   OpenaiMessage,
   SearchWikipediaParams,
   SendOpenaiMessageBody,
+  SyncAviAchievements200,
+  SyncAviAchievementsBody,
+  UpdateAviProfileBody,
+  UpdateAviSettingsBody,
   WikipediaArticle,
   WikipediaSearchResponse,
 } from "./api.schemas";
@@ -625,6 +631,423 @@ export const useSendOpenaiMessage = <
   TContext
 > => {
   return useMutation(getSendOpenaiMessageMutationOptions(options));
+};
+
+/**
+ * @summary Get the signed-in AVI Plus account
+ */
+export const getGetAviAccountUrl = () => {
+  return `/api/account/me`;
+};
+
+export const getAviAccount = async (
+  options?: RequestInit,
+): Promise<AviAccount> => {
+  return customFetch<AviAccount>(getGetAviAccountUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetAviAccountQueryKey = () => {
+  return [`/api/account/me`] as const;
+};
+
+export const getGetAviAccountQueryOptions = <
+  TData = Awaited<ReturnType<typeof getAviAccount>>,
+  TError = ErrorType<void>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getAviAccount>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetAviAccountQueryKey();
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getAviAccount>>> = ({
+    signal,
+  }) => getAviAccount({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getAviAccount>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetAviAccountQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getAviAccount>>
+>;
+export type GetAviAccountQueryError = ErrorType<void>;
+
+/**
+ * @summary Get the signed-in AVI Plus account
+ */
+
+export function useGetAviAccount<
+  TData = Awaited<ReturnType<typeof getAviAccount>>,
+  TError = ErrorType<void>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getAviAccount>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetAviAccountQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Update AVI Plus profile details
+ */
+export const getUpdateAviProfileUrl = () => {
+  return `/api/account/profile`;
+};
+
+export const updateAviProfile = async (
+  updateAviProfileBody: UpdateAviProfileBody,
+  options?: RequestInit,
+): Promise<AviAccount> => {
+  return customFetch<AviAccount>(getUpdateAviProfileUrl(), {
+    ...options,
+    method: "PATCH",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(updateAviProfileBody),
+  });
+};
+
+export const getUpdateAviProfileMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateAviProfile>>,
+    TError,
+    { data: BodyType<UpdateAviProfileBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof updateAviProfile>>,
+  TError,
+  { data: BodyType<UpdateAviProfileBody> },
+  TContext
+> => {
+  const mutationKey = ["updateAviProfile"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof updateAviProfile>>,
+    { data: BodyType<UpdateAviProfileBody> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return updateAviProfile(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type UpdateAviProfileMutationResult = NonNullable<
+  Awaited<ReturnType<typeof updateAviProfile>>
+>;
+export type UpdateAviProfileMutationBody = BodyType<UpdateAviProfileBody>;
+export type UpdateAviProfileMutationError = ErrorType<void>;
+
+/**
+ * @summary Update AVI Plus profile details
+ */
+export const useUpdateAviProfile = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateAviProfile>>,
+    TError,
+    { data: BodyType<UpdateAviProfileBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof updateAviProfile>>,
+  TError,
+  { data: BodyType<UpdateAviProfileBody> },
+  TContext
+> => {
+  return useMutation(getUpdateAviProfileMutationOptions(options));
+};
+
+/**
+ * @summary Update AVI Plus parent settings
+ */
+export const getUpdateAviSettingsUrl = () => {
+  return `/api/account/settings`;
+};
+
+export const updateAviSettings = async (
+  updateAviSettingsBody: UpdateAviSettingsBody,
+  options?: RequestInit,
+): Promise<AviAccount> => {
+  return customFetch<AviAccount>(getUpdateAviSettingsUrl(), {
+    ...options,
+    method: "PATCH",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(updateAviSettingsBody),
+  });
+};
+
+export const getUpdateAviSettingsMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateAviSettings>>,
+    TError,
+    { data: BodyType<UpdateAviSettingsBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof updateAviSettings>>,
+  TError,
+  { data: BodyType<UpdateAviSettingsBody> },
+  TContext
+> => {
+  const mutationKey = ["updateAviSettings"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof updateAviSettings>>,
+    { data: BodyType<UpdateAviSettingsBody> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return updateAviSettings(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type UpdateAviSettingsMutationResult = NonNullable<
+  Awaited<ReturnType<typeof updateAviSettings>>
+>;
+export type UpdateAviSettingsMutationBody = BodyType<UpdateAviSettingsBody>;
+export type UpdateAviSettingsMutationError = ErrorType<void>;
+
+/**
+ * @summary Update AVI Plus parent settings
+ */
+export const useUpdateAviSettings = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateAviSettings>>,
+    TError,
+    { data: BodyType<UpdateAviSettingsBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof updateAviSettings>>,
+  TError,
+  { data: BodyType<UpdateAviSettingsBody> },
+  TContext
+> => {
+  return useMutation(getUpdateAviSettingsMutationOptions(options));
+};
+
+/**
+ * @summary Link the current anonymous browser session to the signed-in account
+ */
+export const getLinkAnonymousAviSessionUrl = () => {
+  return `/api/account/link-anonymous`;
+};
+
+export const linkAnonymousAviSession = async (
+  options?: RequestInit,
+): Promise<LinkAnonymousAviSession200> => {
+  return customFetch<LinkAnonymousAviSession200>(
+    getLinkAnonymousAviSessionUrl(),
+    {
+      ...options,
+      method: "POST",
+    },
+  );
+};
+
+export const getLinkAnonymousAviSessionMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof linkAnonymousAviSession>>,
+    TError,
+    void,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof linkAnonymousAviSession>>,
+  TError,
+  void,
+  TContext
+> => {
+  const mutationKey = ["linkAnonymousAviSession"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof linkAnonymousAviSession>>,
+    void
+  > = () => {
+    return linkAnonymousAviSession(requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type LinkAnonymousAviSessionMutationResult = NonNullable<
+  Awaited<ReturnType<typeof linkAnonymousAviSession>>
+>;
+
+export type LinkAnonymousAviSessionMutationError = ErrorType<void>;
+
+/**
+ * @summary Link the current anonymous browser session to the signed-in account
+ */
+export const useLinkAnonymousAviSession = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof linkAnonymousAviSession>>,
+    TError,
+    void,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof linkAnonymousAviSession>>,
+  TError,
+  void,
+  TContext
+> => {
+  return useMutation(getLinkAnonymousAviSessionMutationOptions(options));
+};
+
+/**
+ * @summary Merge browser achievements into the signed-in account
+ */
+export const getSyncAviAchievementsUrl = () => {
+  return `/api/account/achievements/sync`;
+};
+
+export const syncAviAchievements = async (
+  syncAviAchievementsBody: SyncAviAchievementsBody,
+  options?: RequestInit,
+): Promise<SyncAviAchievements200> => {
+  return customFetch<SyncAviAchievements200>(getSyncAviAchievementsUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(syncAviAchievementsBody),
+  });
+};
+
+export const getSyncAviAchievementsMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof syncAviAchievements>>,
+    TError,
+    { data: BodyType<SyncAviAchievementsBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof syncAviAchievements>>,
+  TError,
+  { data: BodyType<SyncAviAchievementsBody> },
+  TContext
+> => {
+  const mutationKey = ["syncAviAchievements"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof syncAviAchievements>>,
+    { data: BodyType<SyncAviAchievementsBody> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return syncAviAchievements(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type SyncAviAchievementsMutationResult = NonNullable<
+  Awaited<ReturnType<typeof syncAviAchievements>>
+>;
+export type SyncAviAchievementsMutationBody = BodyType<SyncAviAchievementsBody>;
+export type SyncAviAchievementsMutationError = ErrorType<void>;
+
+/**
+ * @summary Merge browser achievements into the signed-in account
+ */
+export const useSyncAviAchievements = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof syncAviAchievements>>,
+    TError,
+    { data: BodyType<SyncAviAchievementsBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof syncAviAchievements>>,
+  TError,
+  { data: BodyType<SyncAviAchievementsBody> },
+  TContext
+> => {
+  return useMutation(getSyncAviAchievementsMutationOptions(options));
 };
 
 /**

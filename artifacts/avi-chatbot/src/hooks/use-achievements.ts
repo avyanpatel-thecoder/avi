@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import {
   loadAchievements,
   unlockAchievements,
@@ -16,6 +16,15 @@ export interface AchievementToast {
 export function useAchievements() {
   const [state, setState] = useState<AchievementState>(() => loadAchievements());
   const [toasts, setToasts] = useState<AchievementToast[]>([]);
+
+  useEffect(() => {
+    const hydrate = (event: Event) => {
+      const synced = (event as CustomEvent<AchievementState>).detail;
+      if (synced) setState(synced);
+    };
+    window.addEventListener("avi-achievements-hydrated", hydrate);
+    return () => window.removeEventListener("avi-achievements-hydrated", hydrate);
+  }, []);
 
   const popToast = useCallback((toastId: number) => {
     setToasts((prev) => prev.filter((t) => t.id !== toastId));
