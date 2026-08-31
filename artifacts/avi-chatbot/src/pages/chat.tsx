@@ -26,7 +26,7 @@ import CodingBackground from "@/components/coding-background";
 import { useAchievements } from "@/hooks/use-achievements";
 import { AchievementToastStack } from "@/components/achievement-toast";
 import { Link } from "wouter";
-import { Show, useAuth } from "@clerk/react";
+import { Show, useAuth, useUser } from "@clerk/react";
 import { useToast } from "@/hooks/use-toast";
 
 type BrowserSpeechRecognition = {
@@ -44,11 +44,15 @@ type BrowserSpeechRecognition = {
 };
 
 type BrowserSpeechRecognitionConstructor = new () => BrowserSpeechRecognition;
+const AD_PREVIEW_EMAIL = "avyan.s.patel@gmail.com";
 
 export default function ChatPage() {
   const queryClient = useQueryClient();
-  const { getToken } = useAuth();
+  const { getToken, isSignedIn } = useAuth();
+  const { user } = useUser();
   const { toast } = useToast();
+  const isAdPreviewer =
+    user?.primaryEmailAddress?.emailAddress?.toLowerCase() === AD_PREVIEW_EMAIL;
   const { data: conversations = [], isLoading: loadingConversations } =
     useListOpenaiConversations();
   const createConversation = useCreateOpenaiConversation();
@@ -107,6 +111,7 @@ export default function ChatPage() {
   const [isListening, setIsListening] = useState(false);
   const [voiceSessionActive, setVoiceSessionActive] = useState(false);
   const [showSignupPrompt, setShowSignupPrompt] = useState(false);
+  const [adPreviewDevMode, setAdPreviewDevMode] = useState(false);
   const [isWikiModalOpen, setIsWikiModalOpen] = useState(false);
   const [isGoalGuessOpen, setIsGoalGuessOpen] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -116,6 +121,7 @@ export default function ChatPage() {
   const activeAudioRef = useRef<HTMLAudioElement | null>(null);
 
   useEffect(() => {
+    if (isSignedIn) return;
     const lastShown = Number(localStorage.getItem("avi_signup_prompt_at") || 0);
     if (Date.now() - lastShown < 8 * 60 * 60 * 1000) return;
     const timer = window.setTimeout(() => {
@@ -123,7 +129,7 @@ export default function ChatPage() {
       setShowSignupPrompt(true);
     }, 30000);
     return () => window.clearTimeout(timer);
-  }, []);
+  }, [isSignedIn]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -632,8 +638,7 @@ export default function ChatPage() {
       {/* ── Main content ── */}
       <main className="flex-1 overflow-y-auto p-4 md:p-6 relative z-[1]">
         <div className="max-w-5xl mx-auto flex flex-col gap-5">
-          <Show when="signed-out">
-            {showSignupPrompt && (
+          {showSignupPrompt && (!isSignedIn || (isAdPreviewer && adPreviewDevMode)) && (
               <div className="relative rounded-2xl border border-purple-200 bg-white p-4 pr-10 shadow-md">
                 <button
                   type="button"
@@ -653,8 +658,7 @@ export default function ChatPage() {
                   </Button>
                 </Link>
               </div>
-            )}
-          </Show>
+          )}
           {showThemePicker ? (
             <ThemePicker
               onSelect={handleThemeSelected}
@@ -698,6 +702,40 @@ export default function ChatPage() {
       <footer className="p-3 md:p-4 bg-white/90 backdrop-blur border-t sticky bottom-0 z-10">
         <div className="max-w-5xl mx-auto flex flex-col gap-2.5">
           {!showThemePicker && <QuickActions onActionSelect={handleQuickAction} />}
+
+          {isAdPreviewer && (
+            <div className="mx-auto flex items-center gap-1">
+              <Button
+                type="button"
+                variant={adPreviewDevMode ? "ghost" : "secondary"}
+                size="sm"
+                onClick={() => setAdPreviewDevMode(false)}
+                className="text-xs"
+              >
+                Normal mode
+              </Button>
+              <Button
+                type="button"
+                variant={adPreviewDevMode ? "secondary" : "ghost"}
+                size="sm"
+                onClick={() => setAdPreviewDevMode(true)}
+                className="text-xs text-purple-700"
+              >
+                Dev mode
+              </Button>
+              {adPreviewDevMode && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowSignupPrompt(true)}
+                  className="text-xs text-purple-700 hover:bg-purple-50"
+                >
+                  Preview signup reminder
+                </Button>
+              )}
+            </div>
+          )}
 
           <div className="flex items-center gap-2">
             {voiceSessionActive && (
