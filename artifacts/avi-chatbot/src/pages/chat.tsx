@@ -7,6 +7,8 @@ import {
   getListOpenaiMessagesQueryKey,
   getGetOpenaiConversationQueryKey,
   OpenaiMessage,
+  useGetAviAccount,
+  getGetAviAccountQueryKey,
 } from "@workspace/api-client-react";
 import { useState, useRef, useEffect } from "react";
 import WelcomeScreen from "@/components/welcome-screen";
@@ -17,7 +19,7 @@ import ThemePicker from "@/components/theme-picker";
 import ThemeBackground from "@/components/theme-background";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Send, Loader2, Clock, LayoutGrid, Palette, HeadphonesIcon } from "lucide-react";
+import { Send, Loader2, Clock, LayoutGrid, Palette, HeadphonesIcon, Mic, MicOff } from "lucide-react";
 import WikipediaModal from "@/components/wikipedia-modal";
 import GoalGuessModal, { GoalGuessResult } from "@/components/goalguess-modal";
 import { getSessionId } from "@/lib/session";
@@ -29,10 +31,33 @@ import { Link } from "wouter";
 import { Show, useAuth } from "@clerk/react";
 import { useToast } from "@/hooks/use-toast";
 
+type BrowserSpeechRecognition = {
+  continuous: boolean;
+  interimResults: boolean;
+  lang: string;
+  start: () => void;
+  stop: () => void;
+  onstart: (() => void) | null;
+  onend: (() => void) | null;
+  onerror: (() => void) | null;
+  onresult: ((event: {
+    results: ArrayLike<ArrayLike<{ transcript: string }>>;
+  }) => void) | null;
+};
+
+type BrowserSpeechRecognitionConstructor = new () => BrowserSpeechRecognition;
+
 export default function ChatPage() {
   const queryClient = useQueryClient();
-  const { getToken } = useAuth();
+  const { getToken, isSignedIn } = useAuth();
   const { toast } = useToast();
+  const { data: account } = useGetAviAccount({
+    query: {
+      enabled: !!isSignedIn,
+      retry: false,
+      queryKey: getGetAviAccountQueryKey(),
+    },
+  });
   const { data: conversations = [], isLoading: loadingConversations } =
     useListOpenaiConversations();
   const createConversation = useCreateOpenaiConversation();
@@ -88,9 +113,12 @@ export default function ChatPage() {
   const [inputMessage, setInputMessage] = useState("");
   const [isStreaming, setIsStreaming] = useState(false);
   const [streamingContent, setStreamingContent] = useState("");
+  const [isListening, setIsListening] = useState(false);
   const [isWikiModalOpen, setIsWikiModalOpen] = useState(false);
   const [isGoalGuessOpen, setIsGoalGuessOpen] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const speechRecognitionRef = useRef<BrowserSpeechRecognition | null>(null);
+  const speakReplyRef = useRef(false);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -229,7 +257,12 @@ export default function ChatPage() {
       queryClient.invalidateQueries({
         queryKey: getGetOpenaiConversationQueryKey(currentConvId),
       });
+      if (speakReplyRef.current && accumulatedContent && "speechSynthesis" in window) {
+        window.speechSynthesis.cancel();
+        window.speechSynthesis.speak(new SpeechSynthesisUtterance(accumulatedContent));
+      }
     } catch (error) {
+      speakReplyRef.current = false;
       queryClient.invalidateQueries({
         queryKey: getListOpenaiMessagesQueryKey(currentConvId),
       });
@@ -242,9 +275,61 @@ export default function ChatPage() {
         variant: "destructive",
       });
     } finally {
+      speakReplyRef.current = false;
       setIsStreaming(false);
       setStreamingContent("");
     }
+  };
+
+  const startVoiceInput = () => {
+    const speechWindow = window as typeof window & {
+      SpeechRecognition?: BrowserSpeechRecognitionConstructor;
+      webkitSpeechRecognition?: BrowserSpeechRecognitionConstructor;
+    };
+    const Recognition =
+      speechWindow.SpeechRecognition || speechWindow.webkitSpeechRecognition;
+
+    if (!Recognition) {
+      toast({
+        title: "Voice input is not supported here",
+        description: "Try AVI Plus in Chrome or Edge.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (isListening) {
+      speechRecognitionRef.current?.stop();
+      return;
+    }
+
+    const recognition = new Recognition();
+    recognition.lang = "en-US";
+    recognition.continuous = false;
+    recognition.interimResults = false;
+    recognition.onstart = () => setIsListening(true);
+    recognition.onend = () => {
+      setIsListening(false);
+      speechRecognitionRef.current = null;
+    };
+    recognition.onerror = () => {
+      setIsListening(false);
+      speechRecognitionRef.current = null;
+      toast({
+        title: "I couldn't hear that",
+        description: "Please try the microphone again.",
+        variant: "destructive",
+      });
+    };
+    recognition.onresult = (event) => {
+      const transcript = event.results[0]?.[0]?.transcript?.trim();
+      if (transcript) {
+        speakReplyRef.current = true;
+        void handleSendMessage(transcript);
+      }
+    };
+    speechRecognitionRef.current = recognition;
+    recognition.start();
   };
 
   useEffect(() => {
@@ -527,6 +612,24 @@ export default function ChatPage() {
           {!showThemePicker && <QuickActions onActionSelect={handleQuickAction} />}
 
           <div className="flex items-center gap-2">
+            {account?.isPlus && (
+              <Button
+                type="button"
+                variant="outline"
+                size="icon"
+                onClick={startVoiceInput}
+                disabled={isStreaming || showThemePicker}
+                className={`flex-shrink-0 rounded-xl h-10 w-10 ${
+                  isListening
+                    ? "border-red-300 bg-red-50 text-red-600"
+                    : "border-purple-200 text-purple-700"
+                }`}
+                title={isListening ? "Stop listening" : "Talk to AVI"}
+                aria-label={isListening ? "Stop listening" : "Talk to AVI"}
+              >
+                {isListening ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
+              </Button>
+            )}
             <Input
               data-testid="input-chat"
               placeholder={
