@@ -77,6 +77,7 @@ export interface AviAccount {
   profileBio: string;
   isPlus: boolean;
   parentModeEnabled: boolean;
+  parentPinSet: boolean;
   dailyLimit: number;
   dailyMessageCount: number;
   achievementState: AviAchievementState;
@@ -105,6 +106,8 @@ export interface UpdateAviSettingsBody {
    * @maximum 500
    */
   dailyLimit?: number;
+  /** @pattern ^[0-9]{4}$ */
+  parentPin?: string;
 }
 
 export type LinkAnonymousAviSession200 = {

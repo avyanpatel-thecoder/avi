@@ -1,4 +1,6 @@
 import { Router } from "express";
+import { promisify } from "node:util";
+import { randomBytes, scrypt as scryptCallback, timingSafeEqual } from "node:crypto";
 import { and, count, eq, isNull } from "drizzle-orm";
 import { db } from "@workspace/db";
 import {
@@ -11,6 +13,7 @@ import {
 import { getClerkUserId, requireAuth } from "../../lib/auth";
 
 const router = Router();
+const scrypt = promisify(scryptCallback);
 
 const DEFAULT_ACHIEVEMENTS: AviAchievementState = {
   unlockedIds: [],
@@ -72,6 +75,7 @@ function accountResponse(account: AviAccount, stats: { conversationCount: number
     isPlus: true,
     parentModeEnabled: account.parentModeEnabled === "true",
     dailyLimit: account.dailyLimit,
+    parentPinSet: Boolean(account.parentPinHash),
     dailyMessageCount: account.dailyMessageCount,
     achievementState: account.achievementState ?? DEFAULT_ACHIEVEMENTS,
     stats,
@@ -136,18 +140,32 @@ router.patch("/account/settings", requireAuth, async (req, res): Promise<void> =
     return;
   }
 
-  const { parentModeEnabled, dailyLimit } = req.body ?? {};
+  const { parentModeEnabled, dailyLimit, parentPin } = req.body ?? {};
   if (
     (parentModeEnabled !== undefined && typeof parentModeEnabled !== "boolean") ||
     (dailyLimit !== undefined &&
-      (!Number.isInteger(dailyLimit) || dailyLimit < 20 || dailyLimit > 500))
+      (!Number.isInteger(dailyLimit) || dailyLimit < 20 || dailyLimit > 500)) ||
+    (typeof parentPin !== "string" || !/^\d{4}$/.test(parentPin))
   ) {
-    res.status(400).json({ error: "Invalid account settings" });
+    res.status(400).json({ error: "A 4-digit parent PIN is required" });
     return;
   }
 
   try {
-    await ensureAccount(userId);
+    const account = await ensureAccount(userId);
+    if (account.parentPinHash && account.parentPinSalt) {
+      const derived = (await scrypt(parentPin, account.parentPinSalt, 64)) as Buffer;
+      const stored = Buffer.from(account.parentPinHash, "hex");
+      if (stored.length !== derived.length || !timingSafeEqual(stored, derived)) {
+        res.status(403).json({ error: "Incorrect parent PIN" });
+        return;
+      }
+    }
+
+    const pinSalt = account.parentPinSalt ?? randomBytes(16).toString("hex");
+    const pinHash = account.parentPinHash
+      ? undefined
+      : ((await scrypt(parentPin, pinSalt, 64)) as Buffer).toString("hex");
     const [updated] = await db
       .update(aviAccounts)
       .set({
@@ -155,6 +173,7 @@ router.patch("/account/settings", requireAuth, async (req, res): Promise<void> =
           ? { parentModeEnabled: parentModeEnabled ? "true" : "false" }
           : {}),
         ...(dailyLimit !== undefined ? { dailyLimit } : {}),
+        ...(pinHash ? { parentPinHash: pinHash, parentPinSalt: pinSalt } : {}),
       })
       .where(eq(aviAccounts.clerkUserId, userId))
       .returning();

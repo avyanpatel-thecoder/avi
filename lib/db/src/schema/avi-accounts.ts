@@ -25,6 +25,8 @@ export const aviAccounts = pgTable("avi_accounts", {
     .default(defaultAchievements),
   parentModeEnabled: text("parent_mode_enabled").notNull().default("false"),
   dailyLimit: integer("daily_limit").notNull().default(100),
+  parentPinHash: text("parent_pin_hash"),
+  parentPinSalt: text("parent_pin_salt"),
   dailyMessageDate: date("daily_message_date", { mode: "string" }),
   dailyMessageCount: integer("daily_message_count").notNull().default(0),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),

@@ -102,6 +102,7 @@ export const GetAviAccountResponse = zod.object({
   profileBio: zod.string(),
   isPlus: zod.boolean(),
   parentModeEnabled: zod.boolean(),
+  parentPinSet: zod.boolean(),
   dailyLimit: zod.number(),
   dailyMessageCount: zod.number(),
   achievementState: zod.object({
@@ -136,6 +137,7 @@ export const UpdateAviProfileResponse = zod.object({
   profileBio: zod.string(),
   isPlus: zod.boolean(),
   parentModeEnabled: zod.boolean(),
+  parentPinSet: zod.boolean(),
   dailyLimit: zod.number(),
   dailyMessageCount: zod.number(),
   achievementState: zod.object({
@@ -154,12 +156,18 @@ export const UpdateAviProfileResponse = zod.object({
 export const updateAviSettingsBodyDailyLimitMin = 20;
 export const updateAviSettingsBodyDailyLimitMax = 500;
 
+export const updateAviSettingsBodyParentPinRegExp = new RegExp("^[0-9]{4}$");
+
 export const UpdateAviSettingsBody = zod.object({
   parentModeEnabled: zod.boolean().optional(),
   dailyLimit: zod
     .number()
     .min(updateAviSettingsBodyDailyLimitMin)
     .max(updateAviSettingsBodyDailyLimitMax)
+    .optional(),
+  parentPin: zod
+    .string()
+    .regex(updateAviSettingsBodyParentPinRegExp)
     .optional(),
 });
 
@@ -170,6 +178,7 @@ export const UpdateAviSettingsResponse = zod.object({
   profileBio: zod.string(),
   isPlus: zod.boolean(),
   parentModeEnabled: zod.boolean(),
+  parentPinSet: zod.boolean(),
   dailyLimit: zod.number(),
   dailyMessageCount: zod.number(),
   achievementState: zod.object({

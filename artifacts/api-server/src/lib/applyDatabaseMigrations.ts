@@ -23,10 +23,22 @@ export async function applyDatabaseMigrations(): Promise<void> {
         DEFAULT '{"unlockedIds":[],"counters":{}}'::jsonb,
       parent_mode_enabled text NOT NULL DEFAULT 'false',
       daily_limit integer NOT NULL DEFAULT 100,
+      parent_pin_hash text,
+      parent_pin_salt text,
       daily_message_date date,
       daily_message_count integer NOT NULL DEFAULT 0,
       created_at timestamp with time zone NOT NULL DEFAULT now(),
       updated_at timestamp with time zone NOT NULL DEFAULT now()
     )
+  `);
+
+  await pool.query(`
+    ALTER TABLE avi_accounts
+    ADD COLUMN IF NOT EXISTS parent_pin_hash text
+  `);
+
+  await pool.query(`
+    ALTER TABLE avi_accounts
+    ADD COLUMN IF NOT EXISTS parent_pin_salt text
   `);
 }

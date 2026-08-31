@@ -438,6 +438,8 @@ components:
           type: boolean
         parentModeEnabled:
           type: boolean
+        parentPinSet:
+          type: boolean
         dailyLimit:
           type: integer
         dailyMessageCount:
@@ -453,6 +455,7 @@ components:
         - profileBio
         - isPlus
         - parentModeEnabled
+        - parentPinSet
         - dailyLimit
         - dailyMessageCount
         - achievementState
@@ -480,3 +483,6 @@ components:
           type: integer
           minimum: 20
           maximum: 500
+        parentPin:
+          type: string
+          pattern: "^[0-9]{4}$"

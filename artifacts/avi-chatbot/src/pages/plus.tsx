@@ -32,6 +32,7 @@ const profileSchema = z.object({
 const settingsSchema = z.object({
   parentModeEnabled: z.boolean(),
   dailyLimit: z.number().min(20).max(500),
+  parentPin: z.string().regex(/^\d{4}$/, "Enter a 4-digit PIN"),
 });
 
 function PlusDashboard() {
@@ -57,6 +58,7 @@ function PlusDashboard() {
     defaultValues: {
       parentModeEnabled: false,
       dailyLimit: 100,
+      parentPin: "",
     },
   });
 
@@ -70,6 +72,7 @@ function PlusDashboard() {
       settingsForm.reset({
         parentModeEnabled: !!account.parentModeEnabled,
         dailyLimit: account.dailyLimit || 100,
+        parentPin: "",
       });
     }
   }, [account, profileForm, settingsForm]);
@@ -426,6 +429,29 @@ function PlusDashboard() {
                         </FormControl>
                         <FormDescription>
                           Currently used: {account.dailyMessageCount} today
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={settingsForm.control}
+                    name="parentPin"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>{account.parentPinSet ? "Parent PIN" : "Create Parent PIN"}</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="password"
+                            inputMode="numeric"
+                            maxLength={4}
+                            placeholder="4 digits"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormDescription>
+                          Required to change Parent Mode or the daily limit.
                         </FormDescription>
                         <FormMessage />
                       </FormItem>
