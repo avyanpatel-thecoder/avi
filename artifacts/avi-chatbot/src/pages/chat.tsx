@@ -117,7 +117,7 @@ export default function ChatPage() {
 
   useEffect(() => {
     const lastShown = Number(localStorage.getItem("avi_signup_prompt_at") || 0);
-    if (Date.now() - lastShown < 24 * 60 * 60 * 1000) return;
+    if (Date.now() - lastShown < 8 * 60 * 60 * 1000) return;
     const timer = window.setTimeout(() => {
       localStorage.setItem("avi_signup_prompt_at", String(Date.now()));
       setShowSignupPrompt(true);
