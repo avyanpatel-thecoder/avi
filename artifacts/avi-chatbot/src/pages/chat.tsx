@@ -650,7 +650,7 @@ export default function ChatPage() {
                   <X className="h-4 w-4" />
                 </button>
                 <p className="text-sm font-bold uppercase tracking-wide text-purple-600">AVI Plus is free</p>
-                <p className="mt-1 text-2xl font-black text-gray-900">Make AVI your learning buddy</p>
+                <p className="mt-1 text-2xl font-black text-gray-900">Get more from AVI</p>
                 <p className="mt-2 text-sm leading-relaxed text-gray-600">
                   Keep your progress and pick up where you left off on any device.
                 </p>
