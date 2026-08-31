@@ -17,7 +17,7 @@ import ThemePicker from "@/components/theme-picker";
 import ThemeBackground from "@/components/theme-background";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Send, Loader2, Clock, LayoutGrid, Palette, HeadphonesIcon } from "lucide-react";
+import { Send, Loader2, Clock, LayoutGrid, Palette, HeadphonesIcon, MicOff, X } from "lucide-react";
 import WikipediaModal from "@/components/wikipedia-modal";
 import GoalGuessModal, { GoalGuessResult } from "@/components/goalguess-modal";
 import { getSessionId } from "@/lib/session";
@@ -105,12 +105,25 @@ export default function ChatPage() {
   const [isStreaming, setIsStreaming] = useState(false);
   const [streamingContent, setStreamingContent] = useState("");
   const [isListening, setIsListening] = useState(false);
+  const [voiceSessionActive, setVoiceSessionActive] = useState(false);
+  const [showSignupPrompt, setShowSignupPrompt] = useState(false);
   const [isWikiModalOpen, setIsWikiModalOpen] = useState(false);
   const [isGoalGuessOpen, setIsGoalGuessOpen] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const speechRecognitionRef = useRef<BrowserSpeechRecognition | null>(null);
   const speakReplyRef = useRef(false);
   const voiceModeRef = useRef(false);
+  const activeAudioRef = useRef<HTMLAudioElement | null>(null);
+
+  useEffect(() => {
+    const lastShown = Number(localStorage.getItem("avi_signup_prompt_at") || 0);
+    if (Date.now() - lastShown < 24 * 60 * 60 * 1000) return;
+    const timer = window.setTimeout(() => {
+      localStorage.setItem("avi_signup_prompt_at", String(Date.now()));
+      setShowSignupPrompt(true);
+    }, 30000);
+    return () => window.clearTimeout(timer);
+  }, []);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -269,13 +282,18 @@ export default function ChatPage() {
           if (!voiceResponse.ok) throw new Error("Voice unavailable");
           const audioUrl = URL.createObjectURL(await voiceResponse.blob());
           const audio = new Audio(audioUrl);
+          activeAudioRef.current = audio;
           audio.onended = () => {
             URL.revokeObjectURL(audioUrl);
+            activeAudioRef.current = null;
             if (voiceModeRef.current) {
               window.setTimeout(startVoiceInput, 200);
             }
           };
-          audio.onerror = () => URL.revokeObjectURL(audioUrl);
+          audio.onerror = () => {
+            URL.revokeObjectURL(audioUrl);
+            activeAudioRef.current = null;
+          };
           await audio.play();
         } catch {
           toast({
@@ -360,13 +378,24 @@ export default function ChatPage() {
     if (sessionStorage.getItem("avi_voice_mode") !== "true") return;
     sessionStorage.removeItem("avi_voice_mode");
     voiceModeRef.current = true;
+    setVoiceSessionActive(true);
     const timer = window.setTimeout(startVoiceInput, 250);
     return () => {
       window.clearTimeout(timer);
       voiceModeRef.current = false;
+      setVoiceSessionActive(false);
       speechRecognitionRef.current?.stop();
     };
   }, []);
+
+  const stopVoiceChat = () => {
+    voiceModeRef.current = false;
+    setVoiceSessionActive(false);
+    speechRecognitionRef.current?.stop();
+    speechRecognitionRef.current = null;
+    activeAudioRef.current?.pause();
+    activeAudioRef.current = null;
+  };
 
   useEffect(() => {
     if (plusLaunchHandled.current) return;
@@ -603,6 +632,29 @@ export default function ChatPage() {
       {/* ── Main content ── */}
       <main className="flex-1 overflow-y-auto p-4 md:p-6 relative z-[1]">
         <div className="max-w-5xl mx-auto flex flex-col gap-5">
+          <Show when="signed-out">
+            {showSignupPrompt && (
+              <div className="relative rounded-2xl border border-purple-200 bg-white p-4 pr-10 shadow-md">
+                <button
+                  type="button"
+                  onClick={() => setShowSignupPrompt(false)}
+                  className="absolute right-3 top-3 rounded-md p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-700"
+                  aria-label="Dismiss signup reminder"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+                <p className="font-bold text-purple-900">Enjoying AVI?</p>
+                <p className="mt-1 text-sm text-gray-600">
+                  Sign up free to save your chats, earn badges, and unlock AVI Plus.
+                </p>
+                <Link href="/sign-up">
+                  <Button size="sm" className="mt-3 bg-purple-600 hover:bg-purple-700">
+                    Sign up free
+                  </Button>
+                </Link>
+              </div>
+            )}
+          </Show>
           {showThemePicker ? (
             <ThemePicker
               onSelect={handleThemeSelected}
@@ -648,6 +700,18 @@ export default function ChatPage() {
           {!showThemePicker && <QuickActions onActionSelect={handleQuickAction} />}
 
           <div className="flex items-center gap-2">
+            {voiceSessionActive && (
+              <Button
+                type="button"
+                variant="outline"
+                onClick={stopVoiceChat}
+                className="flex-shrink-0 rounded-xl border-red-200 text-red-600 hover:bg-red-50"
+                title="Stop voice chat"
+              >
+                <MicOff className="mr-1.5 h-4 w-4" />
+                <span className="hidden sm:inline">Stop listening</span>
+              </Button>
+            )}
             <Input
               data-testid="input-chat"
               placeholder={
