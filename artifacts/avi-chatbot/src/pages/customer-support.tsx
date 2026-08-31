@@ -46,13 +46,7 @@ const faqs: FAQ[] = [
     category: "Features",
     question: "What can I ask AVI?",
     answer:
-      "You can ask AVI almost anything kid-friendly! Popular topics include: tech & programming questions, math help, coding term definitions, jokes, vacation ideas, trivia games, Wikipedia searches, book recommendations, and even the GoalGuess 2026 FIFA World Cup game.",
-  },
-  {
-    category: "Features",
-    question: "What is GoalGuess 2026?",
-    answer:
-      "GoalGuess 2026 is a fun mini-game inside AVI where you guess the mystery team from real FIFA World Cup 2026 match results. You're shown the score of an actual match and one team's flag — your job is to guess the other team before the timer runs out!",
+      "You can ask AVI almost anything kid-friendly! Popular topics include: tech & programming questions, math help, coding term definitions, jokes, vacation ideas, trivia games, Wikipedia searches, and book recommendations.",
   },
   {
     category: "Features",

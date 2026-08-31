@@ -95,7 +95,7 @@ export default function BadgeShelf({ unlockedIds }: BadgeShelfProps) {
 
       {earnedCount === 0 && !expanded && (
         <p className="mt-2 text-xs text-gray-400 text-center">
-          Start chatting, play GoalGuess, or try Coding Mode to earn your first badge! 🏅
+          Start chatting or try Coding Mode to earn your first badge! 🏅
         </p>
       )}
     </div>

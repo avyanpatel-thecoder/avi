@@ -19,7 +19,6 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Send, Loader2, Clock, LayoutGrid, Palette, HeadphonesIcon, MicOff, X } from "lucide-react";
 import WikipediaModal from "@/components/wikipedia-modal";
-import GoalGuessModal, { GoalGuessResult } from "@/components/goalguess-modal";
 import { getSessionId } from "@/lib/session";
 import { ThemeId, getTheme, saveConvTheme, loadConvTheme, saveCodingMode, loadCodingMode } from "@/lib/themes";
 import CodingBackground from "@/components/coding-background";
@@ -113,7 +112,6 @@ export default function ChatPage() {
   const [showSignupPrompt, setShowSignupPrompt] = useState(false);
   const [adPreviewDevMode, setAdPreviewDevMode] = useState(false);
   const [isWikiModalOpen, setIsWikiModalOpen] = useState(false);
-  const [isGoalGuessOpen, setIsGoalGuessOpen] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const speechRecognitionRef = useRef<BrowserSpeechRecognition | null>(null);
   const speakReplyRef = useRef(false);
@@ -422,19 +420,10 @@ export default function ChatPage() {
   const CODING_ACTIVATE = /\b(coding mode|code mode|activate coding|start coding mode|enter coding)\b/i;
   const CODING_DEACTIVATE = /\b(exit coding|leave coding|deactivate coding|normal mode|exit coding mode)\b/i;
 
-  const handleGoalGuessEnd = (result: GoalGuessResult) => {
-    const toUnlock: string[] = ["goalguess_hero"];
-    if (result.score >= 5) toUnlock.push("goalguess_champion");
-    if (result.maxStreak >= 3) toUnlock.push("goalguess_streak");
-    unlock(toUnlock);
-  };
-
   const handleQuickAction = (action: string) => {
     if (action === "wikipedia") {
       unlock("wiki_explorer");
       setIsWikiModalOpen(true);
-    } else if (action === "goalguess") {
-      setIsGoalGuessOpen(true);
     } else if (action === "coding_mode") {
       unlock("code_apprentice");
       setIsCodingMode(true);
@@ -800,12 +789,6 @@ export default function ChatPage() {
         isOpen={isWikiModalOpen}
         onClose={() => setIsWikiModalOpen(false)}
         onInsert={(content) => handleSendMessage(`Tell me about: ${content}`)}
-      />
-
-      <GoalGuessModal
-        isOpen={isGoalGuessOpen}
-        onClose={() => setIsGoalGuessOpen(false)}
-        onGameEnd={handleGoalGuessEnd}
       />
 
       <HistoryPanel
