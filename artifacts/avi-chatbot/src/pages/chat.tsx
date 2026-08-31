@@ -248,21 +248,36 @@ export default function ChatPage() {
       queryClient.invalidateQueries({
         queryKey: getGetOpenaiConversationQueryKey(currentConvId),
       });
-      if (speakReplyRef.current && accumulatedContent && "speechSynthesis" in window) {
+      if (speakReplyRef.current && accumulatedContent) {
         const spokenText = accumulatedContent
           .replace(/[\p{Extended_Pictographic}\uFE0F]/gu, "")
+          .replace(/[*_#`>]/g, "")
           .replace(/\s+/g, " ")
           .trim();
-        const voices = window.speechSynthesis.getVoices();
-        const preferredVoice = voices.find((voice) =>
-          /Microsoft (Jenny|Aria)|Google US English|Samantha|Karen|Ava/i.test(voice.name)
-        );
-        window.speechSynthesis.cancel();
-        const utterance = new SpeechSynthesisUtterance(spokenText);
-        if (preferredVoice) utterance.voice = preferredVoice;
-        utterance.rate = 0.92;
-        utterance.pitch = 1.04;
-        window.speechSynthesis.speak(utterance);
+        try {
+          const voiceHeaders: Record<string, string> = {
+            "Content-Type": "application/json",
+          };
+          const voiceToken = await getToken();
+          if (voiceToken) voiceHeaders.Authorization = `Bearer ${voiceToken}`;
+          const voiceResponse = await fetch(`${BASE}api/openai/speech`, {
+            method: "POST",
+            headers: voiceHeaders,
+            body: JSON.stringify({ text: spokenText }),
+          });
+          if (!voiceResponse.ok) throw new Error("Voice unavailable");
+          const audioUrl = URL.createObjectURL(await voiceResponse.blob());
+          const audio = new Audio(audioUrl);
+          audio.onended = () => URL.revokeObjectURL(audioUrl);
+          audio.onerror = () => URL.revokeObjectURL(audioUrl);
+          await audio.play();
+        } catch {
+          toast({
+            title: "AVI's natural voice is unavailable",
+            description: "The typed reply is still shown above.",
+            variant: "destructive",
+          });
+        }
       }
     } catch (error) {
       speakReplyRef.current = false;

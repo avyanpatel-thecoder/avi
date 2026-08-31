@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { openai } from "@workspace/integrations-openai-ai-server";
+import { textToSpeech } from "@workspace/integrations-openai-ai-server/audio";
 import { db } from "@workspace/db";
 import { aviAccounts, conversations, messages } from "@workspace/db";
 import { and, eq, isNull, lt, ne, or, sql } from "drizzle-orm";
@@ -11,9 +12,37 @@ import {
   SendOpenaiMessageParams,
   SendOpenaiMessageBody,
 } from "@workspace/api-zod";
-import { getClerkUserId } from "../../lib/auth";
+import { getClerkUserId, requireAuth } from "../../lib/auth";
 
 const router = Router();
+
+router.post("/openai/speech", requireAuth, async (req, res): Promise<void> => {
+  const userId = getClerkUserId(req);
+  const text = typeof req.body?.text === "string" ? req.body.text.trim() : "";
+  if (!userId || !text || text.length > 2000) {
+    res.status(400).json({ error: "Invalid speech text" });
+    return;
+  }
+
+  const [account] = await db
+    .select({ id: aviAccounts.id })
+    .from(aviAccounts)
+    .where(eq(aviAccounts.clerkUserId, userId))
+    .limit(1);
+  if (!account) {
+    res.status(403).json({ error: "AVI Plus is required" });
+    return;
+  }
+
+  try {
+    const audio = await textToSpeech(text, "nova", "mp3");
+    res.setHeader("Content-Type", "audio/mpeg");
+    res.setHeader("Cache-Control", "no-store");
+    res.send(audio);
+  } catch {
+    res.status(502).json({ error: "AVI voice is temporarily unavailable" });
+  }
+});
 
 const THEME_INSTRUCTIONS: Record<string, string> = {
   magic: "THEME MODE — MAGIC ACADEMY: Respond like a friendly wise wizard mentor! Use magical expressions like 'Splendid spell!' or 'By the stars!', reference potions, spells, and magical creatures. Make every answer feel enchanted and wondrous! ✨",
