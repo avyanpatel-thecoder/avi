@@ -7,8 +7,6 @@ import {
   getListOpenaiMessagesQueryKey,
   getGetOpenaiConversationQueryKey,
   OpenaiMessage,
-  useGetAviAccount,
-  getGetAviAccountQueryKey,
 } from "@workspace/api-client-react";
 import { useState, useRef, useEffect } from "react";
 import WelcomeScreen from "@/components/welcome-screen";
@@ -19,7 +17,7 @@ import ThemePicker from "@/components/theme-picker";
 import ThemeBackground from "@/components/theme-background";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Send, Loader2, Clock, LayoutGrid, Palette, HeadphonesIcon, Mic, MicOff } from "lucide-react";
+import { Send, Loader2, Clock, LayoutGrid, Palette, HeadphonesIcon } from "lucide-react";
 import WikipediaModal from "@/components/wikipedia-modal";
 import GoalGuessModal, { GoalGuessResult } from "@/components/goalguess-modal";
 import { getSessionId } from "@/lib/session";
@@ -49,15 +47,8 @@ type BrowserSpeechRecognitionConstructor = new () => BrowserSpeechRecognition;
 
 export default function ChatPage() {
   const queryClient = useQueryClient();
-  const { getToken, isSignedIn } = useAuth();
+  const { getToken } = useAuth();
   const { toast } = useToast();
-  const { data: account } = useGetAviAccount({
-    query: {
-      enabled: !!isSignedIn,
-      retry: false,
-      queryKey: getGetAviAccountQueryKey(),
-    },
-  });
   const { data: conversations = [], isLoading: loadingConversations } =
     useListOpenaiConversations();
   const createConversation = useCreateOpenaiConversation();
@@ -258,8 +249,20 @@ export default function ChatPage() {
         queryKey: getGetOpenaiConversationQueryKey(currentConvId),
       });
       if (speakReplyRef.current && accumulatedContent && "speechSynthesis" in window) {
+        const spokenText = accumulatedContent
+          .replace(/[\p{Extended_Pictographic}\uFE0F]/gu, "")
+          .replace(/\s+/g, " ")
+          .trim();
+        const voices = window.speechSynthesis.getVoices();
+        const preferredVoice = voices.find((voice) =>
+          /Microsoft (Jenny|Aria)|Google US English|Samantha|Karen|Ava/i.test(voice.name)
+        );
         window.speechSynthesis.cancel();
-        window.speechSynthesis.speak(new SpeechSynthesisUtterance(accumulatedContent));
+        const utterance = new SpeechSynthesisUtterance(spokenText);
+        if (preferredVoice) utterance.voice = preferredVoice;
+        utterance.rate = 0.92;
+        utterance.pitch = 1.04;
+        window.speechSynthesis.speak(utterance);
       }
     } catch (error) {
       speakReplyRef.current = false;
@@ -331,6 +334,13 @@ export default function ChatPage() {
     speechRecognitionRef.current = recognition;
     recognition.start();
   };
+
+  useEffect(() => {
+    if (sessionStorage.getItem("avi_voice_mode") !== "true") return;
+    sessionStorage.removeItem("avi_voice_mode");
+    const timer = window.setTimeout(startVoiceInput, 250);
+    return () => window.clearTimeout(timer);
+  }, []);
 
   useEffect(() => {
     if (plusLaunchHandled.current) return;
@@ -612,24 +622,6 @@ export default function ChatPage() {
           {!showThemePicker && <QuickActions onActionSelect={handleQuickAction} />}
 
           <div className="flex items-center gap-2">
-            {account?.isPlus && (
-              <Button
-                type="button"
-                variant="outline"
-                size="icon"
-                onClick={startVoiceInput}
-                disabled={isStreaming || showThemePicker}
-                className={`flex-shrink-0 rounded-xl h-10 w-10 ${
-                  isListening
-                    ? "border-red-300 bg-red-50 text-red-600"
-                    : "border-purple-200 text-purple-700"
-                }`}
-                title={isListening ? "Stop listening" : "Talk to AVI"}
-                aria-label={isListening ? "Stop listening" : "Talk to AVI"}
-              >
-                {isListening ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
-              </Button>
-            )}
             <Input
               data-testid="input-chat"
               placeholder={

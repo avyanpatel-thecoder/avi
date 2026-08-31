@@ -4,7 +4,7 @@ import { Show, useClerk } from "@clerk/react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { Loader2, Save, UserCircle, LogOut, ArrowLeft, Shield, Sparkles, MessageSquare, Award, GraduationCap, BookOpen, ClipboardList, Brain } from "lucide-react";
+import { Loader2, Save, UserCircle, LogOut, ArrowLeft, Shield, Sparkles, MessageSquare, Award, GraduationCap, BookOpen, ClipboardList, Brain, Mic } from "lucide-react";
 
 import {
   useGetAviAccount,
@@ -106,6 +106,11 @@ function PlusDashboard() {
 
   const launchActivity = (prompt: string) => {
     sessionStorage.setItem("avi_plus_launch", prompt);
+    setLocation("/");
+  };
+
+  const launchVoiceChat = () => {
+    sessionStorage.setItem("avi_voice_mode", "true");
     setLocation("/");
   };
 
@@ -219,6 +224,19 @@ function PlusDashboard() {
         </div>
 
         <section aria-labelledby="plus-activities-heading">
+          <Button
+            variant="outline"
+            className="mb-5 h-auto w-full justify-start gap-4 rounded-2xl border-purple-300 bg-gradient-to-r from-purple-50 to-indigo-50 p-5 text-left hover:from-purple-100 hover:to-indigo-100"
+            onClick={launchVoiceChat}
+          >
+            <span className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-purple-600 text-white shadow-sm">
+              <Mic className="h-6 w-6" />
+            </span>
+            <span>
+              <span className="block text-lg font-bold text-gray-900">Talk To AVI</span>
+              <span className="block text-sm font-normal text-gray-600">Speak naturally and hear AVI talk back</span>
+            </span>
+          </Button>
           <div className="mb-4">
             <h2 id="plus-activities-heading" className="text-xl font-bold text-gray-900">
               Plus-Only Learning Activities
