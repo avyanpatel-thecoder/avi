@@ -639,7 +639,8 @@ export default function ChatPage() {
       <main className="flex-1 overflow-y-auto p-4 md:p-6 relative z-[1]">
         <div className="max-w-5xl mx-auto flex flex-col gap-5">
           {showSignupPrompt && (!isSignedIn || (isAdPreviewer && adPreviewDevMode)) && (
-              <div className="relative rounded-2xl border border-purple-200 bg-white p-4 pr-10 shadow-md">
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-950/35 p-4">
+              <div className="relative w-full max-w-md rounded-3xl border border-purple-200 bg-white p-7 shadow-2xl">
                 <button
                   type="button"
                   onClick={() => setShowSignupPrompt(false)}
@@ -648,16 +649,23 @@ export default function ChatPage() {
                 >
                   <X className="h-4 w-4" />
                 </button>
-                <p className="font-bold text-purple-900">Enjoying AVI?</p>
-                <p className="mt-1 text-sm text-gray-600">
-                  Sign up free to save your chats, earn badges, and unlock AVI Plus.
+                <p className="text-sm font-bold uppercase tracking-wide text-purple-600">AVI Plus is free</p>
+                <p className="mt-1 text-2xl font-black text-gray-900">Make AVI your learning buddy</p>
+                <p className="mt-2 text-sm leading-relaxed text-gray-600">
+                  Keep your progress and pick up where you left off on any device.
                 </p>
+                <ul className="mt-4 space-y-2 text-sm text-gray-700">
+                  <li>✓ Save every chat and achievement</li>
+                  <li>✓ Customize AVI and unlock guided activities</li>
+                  <li>✓ Get higher daily message limits</li>
+                </ul>
                 <Link href="/sign-up">
-                  <Button size="sm" className="mt-3 bg-purple-600 hover:bg-purple-700">
-                    Sign up free
+                  <Button size="lg" className="mt-6 w-full bg-purple-600 font-bold hover:bg-purple-700">
+                    Create my free account
                   </Button>
                 </Link>
               </div>
+            </div>
           )}
           {showThemePicker ? (
             <ThemePicker
