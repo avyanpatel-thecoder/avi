@@ -110,6 +110,7 @@ export default function ChatPage() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const speechRecognitionRef = useRef<BrowserSpeechRecognition | null>(null);
   const speakReplyRef = useRef(false);
+  const voiceModeRef = useRef(false);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -268,7 +269,12 @@ export default function ChatPage() {
           if (!voiceResponse.ok) throw new Error("Voice unavailable");
           const audioUrl = URL.createObjectURL(await voiceResponse.blob());
           const audio = new Audio(audioUrl);
-          audio.onended = () => URL.revokeObjectURL(audioUrl);
+          audio.onended = () => {
+            URL.revokeObjectURL(audioUrl);
+            if (voiceModeRef.current) {
+              window.setTimeout(startVoiceInput, 200);
+            }
+          };
           audio.onerror = () => URL.revokeObjectURL(audioUrl);
           await audio.play();
         } catch {
@@ -353,8 +359,13 @@ export default function ChatPage() {
   useEffect(() => {
     if (sessionStorage.getItem("avi_voice_mode") !== "true") return;
     sessionStorage.removeItem("avi_voice_mode");
+    voiceModeRef.current = true;
     const timer = window.setTimeout(startVoiceInput, 250);
-    return () => window.clearTimeout(timer);
+    return () => {
+      window.clearTimeout(timer);
+      voiceModeRef.current = false;
+      speechRecognitionRef.current?.stop();
+    };
   }, []);
 
   useEffect(() => {
