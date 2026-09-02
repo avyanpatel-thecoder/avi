@@ -1,10 +1,10 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useLocation, Link, Redirect } from "wouter";
 import { Show, useClerk } from "@clerk/react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { Loader2, Save, UserCircle, LogOut, ArrowLeft, Shield, Sparkles, MessageSquare, Award, GraduationCap, BookOpen, ClipboardList, Brain, Mic } from "lucide-react";
+import { Loader2, Save, UserCircle, LogOut, ArrowLeft, Shield, Sparkles, MessageSquare, Award, GraduationCap, BookOpen, ClipboardList, Brain, Mic, Gamepad2, RotateCcw } from "lucide-react";
 
 import {
   useGetAviAccount,
@@ -34,6 +34,90 @@ const settingsSchema = z.object({
   dailyLimit: z.number().min(20).max(500),
   parentPin: z.string().regex(/^\d{4}$/, "Enter a 4-digit PIN"),
 });
+
+type ArcadeCell = "X" | "O" | null;
+const winningLines = [
+  [0, 1, 2],
+  [3, 4, 5],
+  [6, 7, 8],
+  [0, 3, 6],
+  [1, 4, 7],
+  [2, 5, 8],
+  [0, 4, 8],
+  [2, 4, 6],
+];
+
+function getGameResult(board: ArcadeCell[]): ArcadeCell | "draw" {
+  for (const [a, b, c] of winningLines) {
+    if (board[a] && board[a] === board[b] && board[a] === board[c]) return board[a];
+  }
+  return board.every(Boolean) ? "draw" : null;
+}
+
+function ArcadeGame() {
+  const [board, setBoard] = useState<ArcadeCell[]>(Array(9).fill(null));
+  const [result, setResult] = useState<ArcadeCell | "draw">(null);
+
+  const reset = () => {
+    setBoard(Array(9).fill(null));
+    setResult(null);
+  };
+
+  const play = (index: number) => {
+    if (board[index] || result) return;
+    const playerBoard = [...board];
+    playerBoard[index] = "X";
+    const playerResult = getGameResult(playerBoard);
+    if (playerResult) {
+      setBoard(playerBoard);
+      setResult(playerResult);
+      return;
+    }
+
+    const openCells = playerBoard
+      .map((cell, cellIndex) => (cell ? -1 : cellIndex))
+      .filter((cellIndex) => cellIndex >= 0);
+    const computerIndex = openCells[Math.floor(Math.random() * openCells.length)];
+    if (computerIndex !== undefined) playerBoard[computerIndex] = "O";
+    setBoard(playerBoard);
+    setResult(getGameResult(playerBoard));
+  };
+
+  return (
+    <Card className="overflow-hidden border-purple-200 bg-gradient-to-br from-purple-50 via-white to-orange-50 shadow-sm">
+      <CardHeader className="border-b border-purple-100">
+        <CardTitle className="flex items-center gap-2 text-purple-900">
+          <Gamepad2 className="h-5 w-5 text-purple-600" />
+          AVI Arcade
+        </CardTitle>
+        <CardDescription>Play Tic-Tac-Toe against AVI</CardDescription>
+      </CardHeader>
+      <CardContent className="flex flex-col items-center gap-4 pt-6">
+        <div className="grid grid-cols-3 gap-2" aria-label="Tic-Tac-Toe board">
+          {board.map((cell, index) => (
+            <button
+              key={index}
+              type="button"
+              aria-label={`Square ${index + 1}${cell ? `: ${cell}` : ""}`}
+              onClick={() => play(index)}
+              className="flex h-16 w-16 items-center justify-center rounded-xl border-2 border-purple-200 bg-white text-2xl font-black text-purple-700 shadow-sm transition hover:border-purple-400 hover:bg-purple-50 disabled:cursor-default"
+              disabled={Boolean(cell) || Boolean(result)}
+            >
+              {cell}
+            </button>
+          ))}
+        </div>
+        <p className="text-sm font-medium text-gray-600">
+          {result === "X" ? "You win!" : result === "O" ? "AVI wins!" : result === "draw" ? "It's a draw!" : "Your turn — you are X"}
+        </p>
+        <Button type="button" variant="outline" size="sm" onClick={reset} className="gap-2 border-purple-200 text-purple-700">
+          <RotateCcw className="h-4 w-4" />
+          New Game
+        </Button>
+      </CardContent>
+    </Card>
+  );
+}
 
 function PlusDashboard() {
   const { data: account, isLoading, error } = useGetAviAccount();
@@ -225,6 +309,8 @@ function PlusDashboard() {
             </CardContent>
           </Card>
         </div>
+
+        <ArcadeGame />
 
         <section aria-labelledby="plus-activities-heading">
           <Button
