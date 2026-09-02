@@ -118,10 +118,11 @@ export default function CustomerSupportPage() {
 
     return () => {
       document.getElementById(scriptId)?.remove();
-      const tawkBubble = document.querySelector(
-        'iframe[title*="chat"], iframe[title*="Tawk"]',
-      );
-      tawkBubble?.parentElement?.remove();
+      document
+        .querySelectorAll(
+          '[id^="tawk"], [class*="tawk"], iframe[src*="tawk.to"], iframe[title*="Tawk"]',
+        )
+        .forEach((element) => element.remove());
     };
   }, []);
 
