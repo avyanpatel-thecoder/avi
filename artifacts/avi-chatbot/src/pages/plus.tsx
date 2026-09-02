@@ -4,7 +4,7 @@ import { Show, useClerk } from "@clerk/react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { Loader2, Save, UserCircle, LogOut, ArrowLeft, Shield, Sparkles, MessageSquare, Award, GraduationCap, BookOpen, ClipboardList, Brain, Mic, Gamepad2, RotateCcw } from "lucide-react";
+import { Loader2, Save, UserCircle, LogOut, ArrowLeft, Shield, Sparkles, MessageSquare, Award, GraduationCap, BookOpen, ClipboardList, Brain, Mic, Gamepad2, RotateCcw, ChevronDown, ChevronUp } from "lucide-react";
 
 import {
   useGetAviAccount,
@@ -54,7 +54,7 @@ function getGameResult(board: ArcadeCell[]): ArcadeCell | "draw" {
   return board.every(Boolean) ? "draw" : null;
 }
 
-function ArcadeGame() {
+function TicTacToeGame() {
   const [board, setBoard] = useState<ArcadeCell[]>(Array(9).fill(null));
   const [result, setResult] = useState<ArcadeCell | "draw">(null);
 
@@ -116,6 +116,132 @@ function ArcadeGame() {
         </Button>
       </CardContent>
     </Card>
+  );
+}
+
+type RpsChoice = "rock" | "paper" | "scissors";
+const rpsChoices: RpsChoice[] = ["rock", "paper", "scissors"];
+const rpsEmoji: Record<RpsChoice, string> = { rock: "🪨", paper: "📄", scissors: "✂️" };
+
+function RockPaperScissorsGame() {
+  const [playerChoice, setPlayerChoice] = useState<RpsChoice | null>(null);
+  const [aviChoice, setAviChoice] = useState<RpsChoice | null>(null);
+  const [result, setResult] = useState("");
+
+  const play = (choice: RpsChoice) => {
+    const computerChoice = rpsChoices[Math.floor(Math.random() * rpsChoices.length)];
+    setPlayerChoice(choice);
+    setAviChoice(computerChoice);
+    setResult(
+      choice === computerChoice
+        ? "It's a draw!"
+        : (choice === "rock" && computerChoice === "scissors") ||
+            (choice === "paper" && computerChoice === "rock") ||
+            (choice === "scissors" && computerChoice === "paper")
+          ? "You win!"
+          : "AVI wins!",
+    );
+  };
+
+  return (
+    <div className="flex flex-col items-center gap-4">
+      <p className="text-sm font-medium text-gray-600">Choose your move</p>
+      <div className="flex flex-wrap justify-center gap-2">
+        {rpsChoices.map((choice) => (
+          <Button
+            key={choice}
+            type="button"
+            variant="outline"
+            onClick={() => play(choice)}
+            className="h-auto gap-2 border-purple-200 px-4 py-3 text-purple-800"
+          >
+            <span className="text-xl">{rpsEmoji[choice]}</span>
+            <span className="capitalize">{choice}</span>
+          </Button>
+        ))}
+      </div>
+      {playerChoice && aviChoice && (
+        <div className="text-center text-sm text-gray-600">
+          <p>You {rpsEmoji[playerChoice]} vs AVI {rpsEmoji[aviChoice]}</p>
+          <p className="mt-1 font-bold text-purple-700">{result}</p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ArcadeSection() {
+  const [isOpen, setIsOpen] = useState(false);
+  const [selectedGame, setSelectedGame] = useState<"tic-tac-toe" | "rock-paper-scissors" | null>(null);
+
+  return (
+    <section>
+      <Button
+        type="button"
+        variant="outline"
+        onClick={() => setIsOpen((open) => !open)}
+        className="h-auto w-full justify-between rounded-2xl border-purple-300 bg-gradient-to-r from-purple-50 to-pink-50 p-5 text-left hover:from-purple-100 hover:to-pink-100"
+        aria-expanded={isOpen}
+      >
+        <span className="flex items-center gap-3">
+          <span className="flex h-12 w-12 items-center justify-center rounded-full bg-purple-600 text-white shadow-sm">
+            <Gamepad2 className="h-6 w-6" />
+          </span>
+          <span>
+            <span className="block text-lg font-bold text-gray-900">AVI Arcade</span>
+            <span className="block text-sm font-normal text-gray-600">Play fun games with AVI</span>
+          </span>
+        </span>
+        {isOpen ? <ChevronUp className="h-5 w-5 text-purple-600" /> : <ChevronDown className="h-5 w-5 text-purple-600" />}
+      </Button>
+
+      {isOpen && (
+        <div className="mt-4">
+          {selectedGame === null ? (
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setSelectedGame("tic-tac-toe")}
+                className="h-auto min-h-28 justify-start gap-3 rounded-2xl border-purple-200 bg-white p-5 text-left hover:bg-purple-50"
+              >
+                <span className="text-3xl">⭕</span>
+                <span>
+                  <span className="block font-bold text-gray-900">Tic-Tac-Toe</span>
+                  <span className="block text-xs font-normal text-gray-600">Can you beat AVI?</span>
+                </span>
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setSelectedGame("rock-paper-scissors")}
+                className="h-auto min-h-28 justify-start gap-3 rounded-2xl border-orange-200 bg-white p-5 text-left hover:bg-orange-50"
+              >
+                <span className="text-3xl">✂️</span>
+                <span>
+                  <span className="block font-bold text-gray-900">Rock Paper Scissors</span>
+                  <span className="block text-xs font-normal text-gray-600">Make your move</span>
+                </span>
+              </Button>
+            </div>
+          ) : (
+            <Card className="border-purple-200 bg-white shadow-sm">
+              <CardHeader className="flex flex-row items-center justify-between border-b border-purple-100">
+                <CardTitle className="text-purple-900">
+                  {selectedGame === "tic-tac-toe" ? "Tic-Tac-Toe" : "Rock Paper Scissors"}
+                </CardTitle>
+                <Button type="button" variant="ghost" size="sm" onClick={() => setSelectedGame(null)} className="text-purple-700">
+                  Back to games
+                </Button>
+              </CardHeader>
+              <CardContent className="pt-6">
+                {selectedGame === "tic-tac-toe" ? <TicTacToeGame /> : <RockPaperScissorsGame />}
+              </CardContent>
+            </Card>
+          )}
+        </div>
+      )}
+    </section>
   );
 }
 
@@ -310,7 +436,7 @@ function PlusDashboard() {
           </Card>
         </div>
 
-        <ArcadeGame />
+        <ArcadeSection />
 
         <section aria-labelledby="plus-activities-heading">
           <Button
