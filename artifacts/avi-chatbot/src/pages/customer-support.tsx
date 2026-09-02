@@ -106,6 +106,26 @@ export default function CustomerSupportPage() {
 
   useEffect(() => {
     const scriptId = "avi-tawk-widget";
+    const tawkWindow = window as Window & {
+      Tawk_API?: { maximize?: () => void; hideWidget?: () => void; shutdown?: () => void };
+    };
+    const removeTawkWidget = () => {
+      tawkWindow.Tawk_API?.hideWidget?.();
+      tawkWindow.Tawk_API?.shutdown?.();
+      document
+        .querySelectorAll(
+          `script#${scriptId}, script[src*="tawk.to"], iframe[src*="tawk.to"], iframe[title*="Tawk"], [id^="tawk"], [class*="tawk"]`,
+        )
+        .forEach((element) => {
+          let root = element as HTMLElement;
+          while (root.parentElement && root.parentElement !== document.body) {
+            root = root.parentElement;
+          }
+          root.remove();
+        });
+    };
+
+    removeTawkWidget();
     if (!document.getElementById(scriptId)) {
       const script = document.createElement("script");
       script.id = scriptId;
@@ -117,12 +137,9 @@ export default function CustomerSupportPage() {
     }
 
     return () => {
-      document.getElementById(scriptId)?.remove();
-      document
-        .querySelectorAll(
-          '[id^="tawk"], [class*="tawk"], iframe[src*="tawk.to"], iframe[title*="Tawk"]',
-        )
-        .forEach((element) => element.remove());
+      removeTawkWidget();
+      window.setTimeout(removeTawkWidget, 250);
+      window.setTimeout(removeTawkWidget, 1000);
     };
   }, []);
 
