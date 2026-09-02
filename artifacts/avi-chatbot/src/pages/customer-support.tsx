@@ -1,4 +1,4 @@
-import { ReactNode, useState } from "react";
+import { ReactNode, useEffect, useState } from "react";
 import { Link } from "wouter";
 import {
   MessageCircle,
@@ -11,6 +11,7 @@ import {
   Shield,
   Zap,
   CheckCircle,
+  Headphones,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -103,6 +104,38 @@ export default function CustomerSupportPage() {
   const [submitted, setSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
+  useEffect(() => {
+    const scriptId = "avi-tawk-widget";
+    if (!document.getElementById(scriptId)) {
+      const script = document.createElement("script");
+      script.id = scriptId;
+      script.async = true;
+      script.src = "https://embed.tawk.to/691fe78c8b4f421956e2a026/1jaia0vri";
+      script.charset = "UTF-8";
+      script.setAttribute("crossorigin", "*");
+      document.body.appendChild(script);
+    }
+
+    return () => {
+      document.getElementById(scriptId)?.remove();
+      const tawkBubble = document.querySelector(
+        'iframe[title*="chat"], iframe[title*="Tawk"]',
+      );
+      tawkBubble?.parentElement?.remove();
+    };
+  }, []);
+
+  const openLiveChat = () => {
+    const tawk = (
+      window as Window & {
+        Tawk_API?: { maximize?: () => void };
+      }
+    ).Tawk_API;
+    if (tawk?.maximize) {
+      tawk.maximize();
+    }
+  };
+
   const filteredFaqs =
     activeCategory === "All" ? faqs : faqs.filter((f) => f.category === activeCategory);
 
@@ -162,7 +195,7 @@ export default function CustomerSupportPage() {
       </section>
 
       {/* Quick contact cards */}
-      <section className="max-w-5xl mx-auto px-6 pb-14 grid grid-cols-1 sm:grid-cols-2 gap-4">
+       <section className="max-w-5xl mx-auto px-6 pb-14 grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div className="bg-white border border-purple-100 rounded-2xl p-6 flex items-start gap-4 shadow-sm hover:shadow-md transition-shadow">
           <div className="bg-purple-100 rounded-xl p-3">
             <MessageCircle className="w-5 h-5 text-purple-600" />
@@ -193,6 +226,24 @@ export default function CustomerSupportPage() {
                 Send a Message
               </Button>
             </a>
+          </div>
+        </div>
+        <div className="bg-white border border-green-100 rounded-2xl p-6 flex items-start gap-4 shadow-sm hover:shadow-md transition-shadow">
+          <div className="bg-green-100 rounded-xl p-3">
+            <Headphones className="w-5 h-5 text-green-600" />
+          </div>
+          <div>
+            <h3 className="font-semibold text-purple-900 mb-1">Live Support</h3>
+            <p className="text-sm text-purple-400 mb-3">
+              Chat with our customer support team when someone is available.
+            </p>
+            <Button
+              size="sm"
+              onClick={openLiveChat}
+              className="bg-green-600 hover:bg-green-700 text-white rounded-xl text-xs"
+            >
+              Start Live Chat
+            </Button>
           </div>
         </div>
       </section>
