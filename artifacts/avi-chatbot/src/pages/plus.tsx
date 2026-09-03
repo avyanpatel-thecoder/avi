@@ -290,6 +290,19 @@ function HangmanGame() {
   );
 }
 
+const aviDinoPixelSprite = [
+  "        ",
+  "    XXX ",
+  "   XXXXX",
+  "  XXXXXE",
+  "  XXXXX ",
+  " XXXXX  ",
+  " XXXXX  ",
+  "  XXX   ",
+  "  X X   ",
+  " XX XX  ",
+];
+
 function DinoDashGame() {
   const [isPlaying, setIsPlaying] = useState(false);
   const [isJumping, setIsJumping] = useState(false);
@@ -410,18 +423,22 @@ function DinoDashGame() {
           <span className="absolute right-1 top-6 h-1 w-3 rotate-6 bg-[#263238]/80" />
         </div>
         <div
-          className={`absolute bottom-7 left-[9%] h-14 w-16 transition-[bottom] duration-300 ${
+          className={`absolute bottom-7 left-[9%] h-20 w-16 [image-rendering:pixelated] transition-[bottom] duration-300 ${
             isJumping ? "bottom-24" : ""
           }`}
-          aria-label="AVI runner"
+          aria-label="AVI pixel runner"
         >
-          <span className="absolute bottom-0 left-2 h-9 w-10 rounded-[45%_55%_30%_40%] bg-[#263238]" />
-          <span className="absolute bottom-6 left-8 h-8 w-8 rounded-[50%_45%_45%_30%] bg-[#263238]" />
-          <span className="absolute bottom-10 left-12 h-2 w-2 rounded-full bg-[#f2f5f2]" />
-          <span className="absolute bottom-1 left-4 h-5 w-2 bg-[#263238]" />
-          <span className="absolute bottom-1 left-10 h-5 w-2 bg-[#263238]" />
-          <span className="absolute bottom-5 left-0 h-2 w-5 -rotate-12 bg-[#263238]" />
-          <span className="absolute bottom-8 left-2 h-2 w-4 rotate-12 bg-[#263238]" />
+          {aviDinoPixelSprite.map((row, rowIndex) =>
+            [...row].map((cell, columnIndex) =>
+              cell === " " ? null : (
+                <span
+                  key={`${rowIndex}-${columnIndex}`}
+                  className={`absolute h-2 w-2 ${cell === "E" ? "bg-[#f2f5f2]" : "bg-[#263238]"}`}
+                  style={{ left: `${columnIndex * 8}px`, top: `${rowIndex * 8}px` }}
+                />
+              ),
+            ),
+          )}
         </div>
         <div
           className={`absolute bottom-7 h-12 w-10 shadow-lg ${
