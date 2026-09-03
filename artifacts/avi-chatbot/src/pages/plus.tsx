@@ -303,14 +303,30 @@ const aviDinoPixelSprite = [
   " XX XX  ",
 ];
 
+const aviDinoPixelSpriteAlt = [
+  "        ",
+  "    XXX ",
+  "   XXXXX",
+  "  XXXXXE",
+  "  XXXXX ",
+  " XXXXX  ",
+  " XXXXX  ",
+  "  XXX   ",
+  "   XX   ",
+  " X  XX  ",
+];
+
 function DinoDashGame() {
   const [isPlaying, setIsPlaying] = useState(false);
+  const [isPaused, setIsPaused] = useState(false);
   const [isJumping, setIsJumping] = useState(false);
   const [obstaclePosition, setObstaclePosition] = useState(96);
   const [targetPosition, setTargetPosition] = useState(112);
   const [targetHeight, setTargetHeight] = useState(35);
   const [obstacleType, setObstacleType] = useState<"cactus" | "cactus-cluster" | "rock">("cactus");
   const [score, setScore] = useState(0);
+  const [runFrame, setRunFrame] = useState(0);
+  const [isNight, setIsNight] = useState(false);
   const [bestScore, setBestScore] = useState(() => Number(localStorage.getItem("avi_dino_best") || 0));
   const jumpingRef = useRef(false);
   const obstaclePositionRef = useRef(96);
@@ -329,6 +345,9 @@ function DinoDashGame() {
     setTargetHeight(35);
     setObstacleType("cactus");
     setScore(0);
+    setRunFrame(0);
+    setIsNight(false);
+    setIsPaused(false);
     setIsPlaying(true);
     setIsJumping(false);
     jumpingRef.current = false;
@@ -338,10 +357,11 @@ function DinoDashGame() {
   const addScore = (points: number) => {
     scoreRef.current += points;
     setScore(scoreRef.current);
+    setIsNight(Math.floor(scoreRef.current / 8) % 2 === 1);
   };
 
   const jump = () => {
-    if (!isPlaying || jumpingRef.current) return;
+    if (!isPlaying || isPaused || jumpingRef.current) return;
     jumpingRef.current = true;
     setIsJumping(true);
     window.setTimeout(() => {
@@ -351,11 +371,13 @@ function DinoDashGame() {
   };
 
   useEffect(() => {
-    if (!isPlaying) return;
+    if (!isPlaying || isPaused) return;
     const timer = window.setInterval(() => {
-      const nextObstacle = obstaclePositionRef.current - 2.8;
+      const speed = Math.min(4.8, 2.8 + scoreRef.current * 0.06);
+      const nextObstacle = obstaclePositionRef.current - speed;
       obstaclePositionRef.current = nextObstacle;
       setObstaclePosition(nextObstacle);
+      setRunFrame((current) => (current === 0 ? 1 : 0));
       if (nextObstacle <= 9) {
         if (!jumpingRef.current) {
           setIsPlaying(false);
@@ -372,7 +394,7 @@ function DinoDashGame() {
         setObstacleType(["cactus", "cactus-cluster", "rock"][Math.floor(Math.random() * 3)] as "cactus" | "cactus-cluster" | "rock");
       }
 
-      const nextTarget = targetPositionRef.current - 2.8;
+      const nextTarget = targetPositionRef.current - speed;
       targetPositionRef.current = nextTarget;
       setTargetPosition(nextTarget);
       if (nextTarget <= 12 && !targetClaimedRef.current) {
@@ -387,7 +409,7 @@ function DinoDashGame() {
       }
     }, 80);
     return () => window.clearInterval(timer);
-  }, [isPlaying]);
+  }, [isPlaying, isPaused]);
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -395,8 +417,11 @@ function DinoDashGame() {
         event.preventDefault();
         if (event.repeat || jumpKeyHeldRef.current) return;
         jumpKeyHeldRef.current = true;
-        if (isPlaying) jump();
-        else startGame();
+        if (isPlaying) {
+          if (!isPaused) jump();
+        } else {
+          startGame();
+        }
       }
     };
     const handleKeyUp = (event: KeyboardEvent) => {
@@ -410,19 +435,29 @@ function DinoDashGame() {
       window.removeEventListener("keydown", handleKeyDown);
       window.removeEventListener("keyup", handleKeyUp);
     };
-  }, [isPlaying]);
+  }, [isPlaying, isPaused]);
 
   return (
     <div className="flex w-full max-w-xl flex-col items-center gap-4">
       <div className="flex w-full items-center justify-between rounded-xl bg-[#263238] px-4 py-2 text-xs font-bold text-white">
-        <span>Score: {score}</span>
+        <div className="flex items-center gap-4">
+          <span>Score: {score}</span>
+          <span className="text-white/50">Pace: {Math.min(4.8, 2.8 + score * 0.06).toFixed(1)}</span>
+        </div>
         <span className="text-lime-300">Best: {bestScore}</span>
       </div>
-      <div className="relative h-60 w-full overflow-hidden rounded-2xl border-2 border-[#263238]/30 bg-[#f2f5f2] shadow-inner">
-        <div className="absolute right-8 top-6 h-9 w-9 rounded-full border-4 border-[#263238]/70" />
-        <div className="absolute left-8 top-9 h-2 w-16 bg-[#263238]/20 shadow-[18px_8px_0_2px_rgba(38,50,56,0.12)]" />
-        <div className="absolute left-[42%] top-20 h-2 w-12 bg-[#263238]/15" />
-        <div className="absolute bottom-7 left-0 h-10 w-full border-t-2 border-[#263238] bg-[#dce5df]" />
+      <div className={`relative h-60 w-full overflow-hidden rounded-2xl border-2 border-[#263238]/30 shadow-inner transition-colors duration-700 ${isNight ? "bg-[#263238]" : "bg-[#f2f5f2]"}`}>
+        <div className={`absolute right-8 top-6 h-9 w-9 rounded-full border-4 transition-colors duration-700 ${isNight ? "border-lime-200 bg-lime-200/20" : "border-[#263238]/70"}`} />
+        <div className={`absolute left-8 top-9 h-2 w-16 shadow-[18px_8px_0_2px_rgba(38,50,56,0.12)] ${isNight ? "bg-white/20 shadow-[18px_8px_0_2px_rgba(255,255,255,0.1)]" : "bg-[#263238]/20"}`} />
+        <div className={`absolute left-[42%] top-20 h-2 w-12 ${isNight ? "bg-white/10" : "bg-[#263238]/15"}`} />
+        {isNight && (
+          <>
+            <span className="absolute left-[28%] top-8 h-1 w-1 bg-white/70" />
+            <span className="absolute left-[65%] top-14 h-1 w-1 bg-white/70" />
+            <span className="absolute right-[24%] top-28 h-1 w-1 bg-white/70" />
+          </>
+        )}
+        <div className={`absolute bottom-7 left-0 h-10 w-full border-t-2 ${isNight ? "border-lime-100/70 bg-[#37474f]" : "border-[#263238] bg-[#dce5df]"}`} />
         <div className="absolute bottom-5 left-0 h-1 w-full bg-[#263238]/35 [background-image:linear-gradient(90deg,transparent_0,transparent_18px,#263238_18px,#263238_26px,transparent_26px,transparent_44px)]" />
         <div
           className="absolute h-9 w-9"
@@ -441,7 +476,7 @@ function DinoDashGame() {
           }`}
           aria-label="AVI pixel runner"
         >
-          {aviDinoPixelSprite.map((row, rowIndex) =>
+          {(runFrame === 0 ? aviDinoPixelSprite : aviDinoPixelSpriteAlt).map((row, rowIndex) =>
             [...row].map((cell, columnIndex) =>
               cell === " " ? null : (
                 <span
@@ -485,7 +520,12 @@ function DinoDashGame() {
         {!isPlaying && (
           <div className="absolute inset-0 flex flex-col items-center justify-center bg-[#263238]/65 text-center text-white">
             <p className="text-lg font-black">{score > 0 ? "Game over!" : "AVI Dino Dash"}</p>
-            <p className="mt-1 text-xs text-white/90">Jump obstacles and dodge flying hazards</p>
+            <p className="mt-1 text-xs text-white/90">Jump obstacles and hit flying targets</p>
+          </div>
+        )}
+        {isPaused && isPlaying && (
+          <div className="absolute inset-0 flex items-center justify-center bg-[#263238]/55 text-center text-white">
+            <p className="text-lg font-black">Paused</p>
           </div>
         )}
       </div>
@@ -493,7 +533,12 @@ function DinoDashGame() {
         <Button type="button" onClick={isPlaying ? jump : startGame} className="bg-cyan-600 text-white hover:bg-cyan-700">
           {isPlaying ? "Jump" : score > 0 ? "Play Again" : "Start Game"}
         </Button>
-        <span className="text-xs text-gray-500">Space or ↑ to jump</span>
+        {isPlaying && (
+          <Button type="button" variant="outline" onClick={() => setIsPaused((current) => !current)} className="border-gray-300 text-gray-700">
+            {isPaused ? "Resume" : "Pause"}
+          </Button>
+        )}
+        <span className="text-xs text-gray-500">Space / ↑ jump · targets +2</span>
       </div>
     </div>
   );
