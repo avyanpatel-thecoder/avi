@@ -88,7 +88,7 @@ function getBestComputerMove(board: ArcadeCell[]): number {
   return bestIndex;
 }
 
-function TicTacToeGame() {
+function TicTacToeGame({ difficulty }: { difficulty: "easy" | "smart" }) {
   const [board, setBoard] = useState<ArcadeCell[]>(Array(9).fill(null));
   const [result, setResult] = useState<ArcadeCell | "draw">(null);
 
@@ -108,7 +108,13 @@ function TicTacToeGame() {
       return;
     }
 
-    const computerIndex = getBestComputerMove(playerBoard);
+    const openCells = playerBoard
+      .map((cell, cellIndex) => (cell ? -1 : cellIndex))
+      .filter((cellIndex) => cellIndex >= 0);
+    const computerIndex =
+      difficulty === "smart"
+        ? getBestComputerMove(playerBoard)
+        : openCells[Math.floor(Math.random() * openCells.length)];
     if (computerIndex !== undefined) playerBoard[computerIndex] = "O";
     setBoard(playerBoard);
     setResult(getGameResult(playerBoard));
@@ -335,9 +341,47 @@ function RockPaperScissorsGame() {
   );
 }
 
+type ArcadeTheme = "cosmic" | "sunset" | "ocean";
+const arcadeThemes: Record<
+  ArcadeTheme,
+  { label: string; panel: string; border: string; accent: string; soft: string }
+> = {
+  cosmic: {
+    label: "Cosmic",
+    panel: "from-slate-950 via-purple-950 to-indigo-950",
+    border: "border-indigo-300/40",
+    accent: "bg-indigo-500",
+    soft: "bg-indigo-400/15",
+  },
+  sunset: {
+    label: "Sunset",
+    panel: "from-rose-950 via-orange-900 to-amber-800",
+    border: "border-orange-300/40",
+    accent: "bg-orange-500",
+    soft: "bg-orange-300/15",
+  },
+  ocean: {
+    label: "Ocean",
+    panel: "from-sky-950 via-cyan-900 to-teal-900",
+    border: "border-cyan-300/40",
+    accent: "bg-cyan-500",
+    soft: "bg-cyan-300/15",
+  },
+};
+
 function ArcadeSection() {
   const [isOpen, setIsOpen] = useState(false);
   const [selectedGame, setSelectedGame] = useState<"tic-tac-toe" | "rock-paper-scissors" | "guess-the-number" | "dice-duel" | "hangman" | null>(null);
+  const [arcadeTheme, setArcadeTheme] = useState<ArcadeTheme>(() => {
+    const saved = localStorage.getItem("avi_arcade_theme");
+    return saved === "sunset" || saved === "ocean" ? saved : "cosmic";
+  });
+  const [ticTacToeDifficulty, setTicTacToeDifficulty] = useState<"easy" | "smart">("smart");
+  const theme = arcadeThemes[arcadeTheme];
+
+  useEffect(() => {
+    localStorage.setItem("avi_arcade_theme", arcadeTheme);
+  }, [arcadeTheme]);
 
   return (
     <section>
@@ -361,74 +405,96 @@ function ArcadeSection() {
       </Button>
 
       {isOpen && (
-        <div className="mt-4">
+        <div className={`mt-4 rounded-3xl bg-gradient-to-br p-4 shadow-inner ${theme.panel}`}>
+          <div className="mb-4 flex flex-col gap-3 rounded-2xl bg-white/10 p-4 text-white backdrop-blur-sm sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p className="text-sm font-bold">Make Arcade yours</p>
+              <p className="text-xs text-white/70">Choose a look and how clever AVI plays.</p>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {(Object.keys(arcadeThemes) as ArcadeTheme[]).map((option) => (
+                <button
+                  key={option}
+                  type="button"
+                  onClick={() => setArcadeTheme(option)}
+                  className={`rounded-full border px-3 py-1.5 text-xs font-bold transition ${
+                    arcadeTheme === option
+                      ? "border-white bg-white text-gray-900"
+                      : "border-white/30 text-white/80 hover:border-white/70 hover:text-white"
+                  }`}
+                >
+                  {arcadeThemes[option].label}
+                </button>
+              ))}
+            </div>
+          </div>
           {selectedGame === null ? (
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
               <Button
                 type="button"
                 variant="outline"
                 onClick={() => setSelectedGame("tic-tac-toe")}
-                className="h-auto min-h-28 justify-start gap-3 rounded-2xl border-purple-200 bg-white p-5 text-left hover:bg-purple-50"
+                className={`h-auto min-h-28 justify-start gap-3 rounded-2xl border p-5 text-left text-white shadow-lg transition hover:-translate-y-0.5 ${theme.border} ${theme.soft}`}
               >
-                <span className="text-3xl">⭕</span>
+                <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/15 text-2xl">⭕</span>
                 <span>
-                  <span className="block font-bold text-gray-900">Tic-Tac-Toe</span>
-                  <span className="block text-xs font-normal text-gray-600">Can you beat AVI?</span>
+                  <span className="block font-bold">Tic-Tac-Toe</span>
+                  <span className="block text-xs font-normal text-white/70">Beat AVI's best moves</span>
                 </span>
               </Button>
               <Button
                 type="button"
                 variant="outline"
                 onClick={() => setSelectedGame("rock-paper-scissors")}
-                className="h-auto min-h-28 justify-start gap-3 rounded-2xl border-orange-200 bg-white p-5 text-left hover:bg-orange-50"
+                className={`h-auto min-h-28 justify-start gap-3 rounded-2xl border p-5 text-left text-white shadow-lg transition hover:-translate-y-0.5 ${theme.border} ${theme.soft}`}
               >
-                <span className="text-3xl">✂️</span>
+                <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/15 text-2xl">✂️</span>
                 <span>
-                  <span className="block font-bold text-gray-900">Rock Paper Scissors</span>
-                  <span className="block text-xs font-normal text-gray-600">Make your move</span>
+                  <span className="block font-bold">Rock Paper Scissors</span>
+                  <span className="block text-xs font-normal text-white/70">Outsmart AVI</span>
                 </span>
               </Button>
               <Button
                 type="button"
                 variant="outline"
                 onClick={() => setSelectedGame("guess-the-number")}
-                className="h-auto min-h-28 justify-start gap-3 rounded-2xl border-blue-200 bg-white p-5 text-left hover:bg-blue-50"
+                className={`h-auto min-h-28 justify-start gap-3 rounded-2xl border p-5 text-left text-white shadow-lg transition hover:-translate-y-0.5 ${theme.border} ${theme.soft}`}
               >
-                <span className="text-3xl">🎯</span>
+                <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/15 text-2xl">🎯</span>
                 <span>
-                  <span className="block font-bold text-gray-900">Guess the Number</span>
-                  <span className="block text-xs font-normal text-gray-600">Can you outguess AVI?</span>
+                  <span className="block font-bold">Guess the Number</span>
+                  <span className="block text-xs font-normal text-white/70">Can you outguess AVI?</span>
                 </span>
               </Button>
               <Button
                 type="button"
                 variant="outline"
                 onClick={() => setSelectedGame("dice-duel")}
-                className="h-auto min-h-28 justify-start gap-3 rounded-2xl border-emerald-200 bg-white p-5 text-left hover:bg-emerald-50"
+                className={`h-auto min-h-28 justify-start gap-3 rounded-2xl border p-5 text-left text-white shadow-lg transition hover:-translate-y-0.5 ${theme.border} ${theme.soft}`}
               >
-                <span className="text-3xl">🎲</span>
+                <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/15 text-2xl">🎲</span>
                 <span>
-                  <span className="block font-bold text-gray-900">Dice Duel</span>
-                  <span className="block text-xs font-normal text-gray-600">Roll against AVI</span>
+                  <span className="block font-bold">Dice Duel</span>
+                  <span className="block text-xs font-normal text-white/70">Roll against AVI</span>
                 </span>
               </Button>
               <Button
                 type="button"
                 variant="outline"
                 onClick={() => setSelectedGame("hangman")}
-                className="h-auto min-h-28 justify-start gap-3 rounded-2xl border-pink-200 bg-white p-5 text-left hover:bg-pink-50"
+                className={`h-auto min-h-28 justify-start gap-3 rounded-2xl border p-5 text-left text-white shadow-lg transition hover:-translate-y-0.5 ${theme.border} ${theme.soft}`}
               >
-                <span className="text-3xl">🔤</span>
+                <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/15 text-2xl">🔤</span>
                 <span>
-                  <span className="block font-bold text-gray-900">Hangman</span>
-                  <span className="block text-xs font-normal text-gray-600">Guess AVI's hidden word</span>
+                  <span className="block font-bold">Hangman</span>
+                  <span className="block text-xs font-normal text-white/70">Guess AVI's hidden word</span>
                 </span>
               </Button>
             </div>
           ) : (
-            <Card className="border-purple-200 bg-white shadow-sm">
-              <CardHeader className="flex flex-row items-center justify-between border-b border-purple-100">
-                <CardTitle className="text-purple-900">
+            <Card className="overflow-hidden border-white/20 bg-white shadow-2xl">
+              <CardHeader className="flex flex-row items-center justify-between border-b border-gray-100">
+                <CardTitle className="text-gray-900">
                   {selectedGame === "tic-tac-toe"
                     ? "Tic-Tac-Toe"
                     : selectedGame === "rock-paper-scissors"
@@ -444,8 +510,25 @@ function ArcadeSection() {
                 </Button>
               </CardHeader>
               <CardContent className="pt-6">
+                {selectedGame === "tic-tac-toe" && (
+                  <div className="mb-4 flex items-center justify-center gap-2">
+                    <span className="text-xs font-semibold text-gray-500">AVI level:</span>
+                    {(["easy", "smart"] as const).map((level) => (
+                      <button
+                        key={level}
+                        type="button"
+                        onClick={() => setTicTacToeDifficulty(level)}
+                        className={`rounded-full px-3 py-1 text-xs font-bold capitalize ${
+                          ticTacToeDifficulty === level ? `${theme.accent} text-white` : "bg-gray-100 text-gray-500"
+                        }`}
+                      >
+                        {level}
+                      </button>
+                    ))}
+                  </div>
+                )}
                 {selectedGame === "tic-tac-toe" ? (
-                  <TicTacToeGame />
+                  <TicTacToeGame difficulty={ticTacToeDifficulty} />
                 ) : selectedGame === "rock-paper-scissors" ? (
                   <RockPaperScissorsGame />
                 ) : selectedGame === "guess-the-number" ? (
