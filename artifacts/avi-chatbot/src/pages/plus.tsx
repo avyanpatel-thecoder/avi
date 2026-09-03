@@ -290,6 +290,33 @@ function HangmanGame() {
   );
 }
 
+function JotformWidgetGame() {
+  const widgetId = "JFWebsiteWidget-01a0649fcb4870008df5159fe75d655be64c";
+  const scriptSrc = "https://www.jotform.com/website-widgets/embed/01a0649fcb4870008df5159fe75d655be64c";
+
+  useEffect(() => {
+    const container = document.getElementById(widgetId);
+    if (!container) return;
+
+    const script = document.createElement("script");
+    script.src = scriptSrc;
+    script.async = true;
+    container.after(script);
+
+    return () => {
+      script.remove();
+      container.innerHTML = "";
+    };
+  }, []);
+
+  return (
+    <div className="w-full overflow-hidden rounded-2xl border border-gray-200 bg-gray-50 p-3">
+      <div id={widgetId} className="min-h-40 w-full" />
+      <p className="mt-3 text-center text-xs text-gray-500">Featured AVI Arcade game</p>
+    </div>
+  );
+}
+
 type RpsChoice = "rock" | "paper" | "scissors";
 const rpsChoices: RpsChoice[] = ["rock", "paper", "scissors"];
 const rpsEmoji: Record<RpsChoice, string> = { rock: "🪨", paper: "📄", scissors: "✂️" };
@@ -371,7 +398,7 @@ const arcadeThemes: Record<
 
 function ArcadeSection() {
   const [isOpen, setIsOpen] = useState(false);
-  const [selectedGame, setSelectedGame] = useState<"tic-tac-toe" | "rock-paper-scissors" | "guess-the-number" | "dice-duel" | "hangman" | null>(null);
+  const [selectedGame, setSelectedGame] = useState<"tic-tac-toe" | "rock-paper-scissors" | "guess-the-number" | "dice-duel" | "hangman" | "jotform" | null>(null);
   const [arcadeTheme, setArcadeTheme] = useState<ArcadeTheme>(() => {
     const saved = localStorage.getItem("avi_arcade_theme");
     return saved === "sunset" || saved === "ocean" ? saved : "cosmic";
@@ -490,6 +517,18 @@ function ArcadeSection() {
                   <span className="block text-xs font-normal text-white/70">Guess AVI's hidden word</span>
                 </span>
               </Button>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setSelectedGame("jotform")}
+                className={`h-auto min-h-28 justify-start gap-3 rounded-2xl border p-5 text-left text-white shadow-lg transition hover:-translate-y-0.5 ${theme.border} ${theme.soft}`}
+              >
+                <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/15 text-2xl">🕹️</span>
+                <span>
+                  <span className="block font-bold">Featured Game</span>
+                  <span className="block text-xs font-normal text-white/70">Play the new AVI widget</span>
+                </span>
+              </Button>
             </div>
           ) : (
             <Card className="overflow-hidden border-white/20 bg-white shadow-2xl">
@@ -503,7 +542,9 @@ function ArcadeSection() {
                         ? "Guess the Number"
                         : selectedGame === "dice-duel"
                           ? "Dice Duel"
-                          : "Hangman"}
+                          : selectedGame === "hangman"
+                            ? "Hangman"
+                            : "Featured Game"}
                 </CardTitle>
                 <Button type="button" variant="ghost" size="sm" onClick={() => setSelectedGame(null)} className="text-purple-700">
                   Back to games
@@ -535,8 +576,10 @@ function ArcadeSection() {
                   <GuessTheNumberGame />
                 ) : selectedGame === "dice-duel" ? (
                   <DiceDuelGame />
-                ) : (
+                ) : selectedGame === "hangman" ? (
                   <HangmanGame />
+                ) : (
+                  <JotformWidgetGame />
                 )}
               </CardContent>
             </Card>
