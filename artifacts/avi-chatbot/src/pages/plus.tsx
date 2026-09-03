@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useLocation, Link, Redirect } from "wouter";
 import { Show, useClerk } from "@clerk/react";
 import { useForm } from "react-hook-form";
@@ -290,29 +290,104 @@ function HangmanGame() {
   );
 }
 
-function JotformWidgetGame() {
-  const widgetId = "JFWebsiteWidget-01a0649fcb4870008df5159fe75d655be64c";
-  const scriptSrc = "https://www.jotform.com/website-widgets/embed/01a0649fcb4870008df5159fe75d655be64c";
+function DinoDashGame() {
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [isJumping, setIsJumping] = useState(false);
+  const [obstaclePosition, setObstaclePosition] = useState(96);
+  const [score, setScore] = useState(0);
+  const [bestScore, setBestScore] = useState(() => Number(localStorage.getItem("avi_dino_best") || 0));
+  const jumpingRef = useRef(false);
+
+  const startGame = () => {
+    setObstaclePosition(96);
+    setScore(0);
+    setIsPlaying(true);
+    setIsJumping(false);
+    jumpingRef.current = false;
+  };
+
+  const jump = () => {
+    if (!isPlaying || jumpingRef.current) return;
+    jumpingRef.current = true;
+    setIsJumping(true);
+    window.setTimeout(() => {
+      jumpingRef.current = false;
+      setIsJumping(false);
+    }, 650);
+  };
 
   useEffect(() => {
-    const container = document.getElementById(widgetId);
-    if (!container) return;
+    if (!isPlaying) return;
+    const timer = window.setInterval(() => {
+      setObstaclePosition((current) => {
+        const next = current - 2.8;
+        if (next <= 9) {
+          if (!jumpingRef.current) {
+            setIsPlaying(false);
+            setBestScore((currentBest) => {
+              const nextBest = Math.max(currentBest, score);
+              localStorage.setItem("avi_dino_best", String(nextBest));
+              return nextBest;
+            });
+            return current;
+          }
+          setScore((currentScore) => currentScore + 1);
+          return 96;
+        }
+        return next;
+      });
+    }, 80);
+    return () => window.clearInterval(timer);
+  }, [isPlaying, score]);
 
-    const script = document.createElement("script");
-    script.src = scriptSrc;
-    script.async = true;
-    container.after(script);
-
-    return () => {
-      script.remove();
-      container.innerHTML = "";
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.code === "Space" || event.code === "ArrowUp") {
+        event.preventDefault();
+        if (isPlaying) jump();
+        else startGame();
+      }
     };
-  }, []);
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isPlaying]);
 
   return (
-    <div className="w-full overflow-hidden rounded-2xl border border-gray-200 bg-gray-50 p-3">
-      <div id={widgetId} className="min-h-40 w-full" />
-      <p className="mt-3 text-center text-xs text-gray-500">Featured AVI Arcade game</p>
+    <div className="flex w-full max-w-xl flex-col items-center gap-4">
+      <div className="flex w-full items-center justify-between rounded-xl bg-slate-900 px-4 py-2 text-xs font-bold text-white">
+        <span>Score: {score}</span>
+        <span className="text-cyan-300">Best: {bestScore}</span>
+      </div>
+      <div className="relative h-48 w-full overflow-hidden rounded-2xl border-2 border-cyan-300/40 bg-gradient-to-b from-sky-400 to-indigo-700 shadow-inner">
+        <div className="absolute right-5 top-5 text-2xl opacity-80">✦</div>
+        <div className="absolute left-8 top-8 text-xl opacity-70">✧</div>
+        <div className="absolute bottom-0 left-0 h-7 w-full bg-slate-950/80" />
+        <div
+          className={`absolute bottom-7 left-[10%] flex h-12 w-12 items-center justify-center rounded-xl bg-cyan-300 text-2xl shadow-lg transition-[bottom] duration-300 ${
+            isJumping ? "bottom-24" : ""
+          }`}
+          aria-label="AVI runner"
+        >
+          🦕
+        </div>
+        <div
+          className="absolute bottom-7 h-12 w-8 rounded-lg bg-orange-400 shadow-lg"
+          style={{ left: `${obstaclePosition}%` }}
+          aria-label="Obstacle"
+        />
+        {!isPlaying && (
+          <div className="absolute inset-0 flex flex-col items-center justify-center bg-slate-950/45 text-center text-white">
+            <p className="text-lg font-black">{score > 0 ? "Game over!" : "AVI Dino Dash"}</p>
+            <p className="mt-1 text-xs text-white/80">Jump over the obstacles</p>
+          </div>
+        )}
+      </div>
+      <div className="flex items-center gap-2">
+        <Button type="button" onClick={isPlaying ? jump : startGame} className="bg-cyan-600 text-white hover:bg-cyan-700">
+          {isPlaying ? "Jump" : score > 0 ? "Play Again" : "Start Game"}
+        </Button>
+        <span className="text-xs text-gray-500">Space or ↑ to jump</span>
+      </div>
     </div>
   );
 }
@@ -398,7 +473,7 @@ const arcadeThemes: Record<
 
 function ArcadeSection() {
   const [isOpen, setIsOpen] = useState(false);
-  const [selectedGame, setSelectedGame] = useState<"tic-tac-toe" | "rock-paper-scissors" | "guess-the-number" | "dice-duel" | "hangman" | "jotform" | null>(null);
+  const [selectedGame, setSelectedGame] = useState<"tic-tac-toe" | "rock-paper-scissors" | "guess-the-number" | "dice-duel" | "hangman" | "dino-dash" | null>(null);
   const [arcadeTheme, setArcadeTheme] = useState<ArcadeTheme>(() => {
     const saved = localStorage.getItem("avi_arcade_theme");
     return saved === "sunset" || saved === "ocean" ? saved : "cosmic";
@@ -520,13 +595,13 @@ function ArcadeSection() {
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => setSelectedGame("jotform")}
+                onClick={() => setSelectedGame("dino-dash")}
                 className={`h-auto min-h-28 justify-start gap-3 rounded-2xl border p-5 text-left text-white shadow-lg transition hover:-translate-y-0.5 ${theme.border} ${theme.soft}`}
               >
-                <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/15 text-2xl">🕹️</span>
+                <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/15 text-2xl">🦕</span>
                 <span>
-                  <span className="block font-bold">Featured Game</span>
-                  <span className="block text-xs font-normal text-white/70">Play the new AVI widget</span>
+                  <span className="block font-bold">AVI Dino Dash</span>
+                  <span className="block text-xs font-normal text-white/70">Jump, dodge, and beat your best</span>
                 </span>
               </Button>
             </div>
@@ -544,7 +619,7 @@ function ArcadeSection() {
                           ? "Dice Duel"
                           : selectedGame === "hangman"
                             ? "Hangman"
-                            : "Featured Game"}
+                            : "AVI Dino Dash"}
                 </CardTitle>
                 <Button type="button" variant="ghost" size="sm" onClick={() => setSelectedGame(null)} className="text-purple-700">
                   Back to games
@@ -579,7 +654,7 @@ function ArcadeSection() {
                 ) : selectedGame === "hangman" ? (
                   <HangmanGame />
                 ) : (
-                  <JotformWidgetGame />
+                  <DinoDashGame />
                 )}
               </CardContent>
             </Card>
