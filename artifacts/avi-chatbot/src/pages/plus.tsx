@@ -544,6 +544,96 @@ function DinoDashGame() {
   );
 }
 
+type TapTargetPosition = { left: number; top: number };
+
+function TargetTapGame() {
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [timeLeft, setTimeLeft] = useState(20);
+  const [score, setScore] = useState(0);
+  const [target, setTarget] = useState<TapTargetPosition>({ left: 50, top: 50 });
+  const [bestScore, setBestScore] = useState(() => Number(localStorage.getItem("avi_target_tap_best") || 0));
+  const scoreRef = useRef(0);
+
+  const moveTarget = () => {
+    setTarget({
+      left: 10 + Math.random() * 80,
+      top: 12 + Math.random() * 70,
+    });
+  };
+
+  const startGame = () => {
+    scoreRef.current = 0;
+    setScore(0);
+    setTimeLeft(20);
+    setTarget({ left: 50, top: 50 });
+    setIsPlaying(true);
+  };
+
+  const tapTarget = () => {
+    if (!isPlaying) return;
+    scoreRef.current += 1;
+    setScore(scoreRef.current);
+    moveTarget();
+  };
+
+  useEffect(() => {
+    if (!isPlaying) return;
+    const timer = window.setInterval(() => {
+      setTimeLeft((current) => {
+        if (current <= 1) {
+          setIsPlaying(false);
+          setBestScore((currentBest) => {
+            const nextBest = Math.max(currentBest, scoreRef.current);
+            localStorage.setItem("avi_target_tap_best", String(nextBest));
+            return nextBest;
+          });
+          return 0;
+        }
+        return current - 1;
+      });
+    }, 1000);
+    return () => window.clearInterval(timer);
+  }, [isPlaying]);
+
+  return (
+    <div className="flex w-full max-w-xl flex-col items-center gap-4">
+      <div className="flex w-full items-center justify-between rounded-xl bg-slate-950 px-4 py-2 text-xs font-bold text-white">
+        <span>Hits: {score}</span>
+        <span className={timeLeft <= 5 && isPlaying ? "text-rose-300" : "text-cyan-300"}>Time: {timeLeft}s</span>
+        <span className="text-amber-300">Best: {bestScore}</span>
+      </div>
+      <div className="relative h-64 w-full overflow-hidden rounded-2xl border-2 border-cyan-300/40 bg-gradient-to-br from-indigo-950 via-purple-900 to-slate-950 shadow-inner">
+        <div className="absolute left-8 top-8 h-1 w-1 bg-white/80 shadow-[110px_25px_0_1px_rgba(255,255,255,0.7),220px_65px_0_1px_rgba(255,255,255,0.65),320px_15px_0_1px_rgba(255,255,255,0.55)]" />
+        <div className="absolute bottom-5 left-5 right-5 h-px bg-cyan-200/20" />
+        {isPlaying && (
+          <button
+            type="button"
+            onClick={tapTarget}
+            className="absolute h-12 w-12 -translate-x-1/2 -translate-y-1/2 rounded-full border-4 border-cyan-100 bg-cyan-300/40 shadow-[0_0_24px_rgba(103,232,249,0.95)] transition-transform hover:scale-110 active:scale-90"
+            style={{ left: `${target.left}%`, top: `${target.top}%` }}
+            aria-label="Tap the target"
+          >
+            <span className="absolute inset-2 rounded-full border-2 border-white/80" />
+            <span className="absolute left-1/2 top-1/2 h-1.5 w-1.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-white" />
+          </button>
+        )}
+        {!isPlaying && (
+          <div className="absolute inset-0 flex flex-col items-center justify-center bg-slate-950/45 text-center text-white">
+            <p className="text-lg font-black">{score > 0 ? "Round complete!" : "AVI Target Tap"}</p>
+            <p className="mt-1 text-xs text-white/80">Tap the moving target as many times as you can</p>
+          </div>
+        )}
+      </div>
+      <div className="flex items-center gap-2">
+        <Button type="button" onClick={startGame} className="bg-cyan-600 text-white hover:bg-cyan-700">
+          {isPlaying ? "Restart Round" : score > 0 ? "Play Again" : "Start Round"}
+        </Button>
+        <span className="text-xs text-gray-500">20 seconds · tap fast</span>
+      </div>
+    </div>
+  );
+}
+
 type RpsChoice = "rock" | "paper" | "scissors";
 const rpsChoices: RpsChoice[] = ["rock", "paper", "scissors"];
 const rpsEmoji: Record<RpsChoice, string> = { rock: "🪨", paper: "📄", scissors: "✂️" };
@@ -625,7 +715,7 @@ const arcadeThemes: Record<
 
 function ArcadeSection() {
   const [isOpen, setIsOpen] = useState(false);
-  const [selectedGame, setSelectedGame] = useState<"tic-tac-toe" | "rock-paper-scissors" | "guess-the-number" | "dice-duel" | "hangman" | "dino-dash" | null>(null);
+  const [selectedGame, setSelectedGame] = useState<"tic-tac-toe" | "rock-paper-scissors" | "guess-the-number" | "dice-duel" | "hangman" | "dino-dash" | "target-tap" | null>(null);
   const [arcadeTheme, setArcadeTheme] = useState<ArcadeTheme>(() => {
     const saved = localStorage.getItem("avi_arcade_theme");
     return saved === "sunset" || saved === "ocean" ? saved : "cosmic";
@@ -756,6 +846,18 @@ function ArcadeSection() {
                   <span className="block text-xs font-normal text-white/70">Jump, dodge, and beat your best</span>
                 </span>
               </Button>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setSelectedGame("target-tap")}
+                className={`h-auto min-h-28 justify-start gap-3 rounded-2xl border p-5 text-left text-white shadow-lg transition hover:-translate-y-0.5 ${theme.border} ${theme.soft}`}
+              >
+                <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/15 text-2xl">🎯</span>
+                <span>
+                  <span className="block font-bold">AVI Target Tap</span>
+                  <span className="block text-xs font-normal text-white/70">Test your reflexes in 20 seconds</span>
+                </span>
+              </Button>
             </div>
           ) : (
             <Card className="overflow-hidden border-white/20 bg-white shadow-2xl">
@@ -771,7 +873,9 @@ function ArcadeSection() {
                           ? "Dice Duel"
                           : selectedGame === "hangman"
                             ? "Hangman"
-                            : "AVI Dino Dash"}
+                            : selectedGame === "dino-dash"
+                              ? "AVI Dino Dash"
+                              : "AVI Target Tap"}
                 </CardTitle>
                 <Button type="button" variant="ghost" size="sm" onClick={() => setSelectedGame(null)} className="text-purple-700">
                   Back to games
@@ -805,8 +909,10 @@ function ArcadeSection() {
                   <DiceDuelGame />
                 ) : selectedGame === "hangman" ? (
                   <HangmanGame />
-                ) : (
+                ) : selectedGame === "dino-dash" ? (
                   <DinoDashGame />
+                ) : (
+                  <TargetTapGame />
                 )}
               </CardContent>
             </Card>
