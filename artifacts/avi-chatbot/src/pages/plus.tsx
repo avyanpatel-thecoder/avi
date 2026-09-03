@@ -228,6 +228,62 @@ function DiceDuelGame() {
   );
 }
 
+const hangmanWords = ["rainbow", "penguin", "rocket", "pancake", "dragon", "unicorn", " popcorn"];
+
+function HangmanGame() {
+  const newWord = () => hangmanWords[Math.floor(Math.random() * hangmanWords.length)].trim();
+  const [word, setWord] = useState(newWord);
+  const [guessed, setGuessed] = useState<string[]>([]);
+  const wrongGuesses = guessed.filter((letter) => !word.includes(letter)).length;
+  const won = word.split("").every((letter) => guessed.includes(letter));
+  const lost = wrongGuesses >= 6;
+  const finished = won || lost;
+  const alphabet = "abcdefghijklmnopqrstuvwxyz".split("");
+
+  const guessLetter = (letter: string) => {
+    if (!finished && !guessed.includes(letter)) setGuessed((current) => [...current, letter]);
+  };
+
+  const reset = () => {
+    setWord(newWord());
+    setGuessed([]);
+  };
+
+  return (
+    <div className="flex w-full max-w-lg flex-col items-center gap-4">
+      <p className="text-sm font-medium text-gray-600">
+        {won ? "You saved the word!" : lost ? `AVI's word was ${word}.` : `${6 - wrongGuesses} guesses left`}
+      </p>
+      <div className="flex gap-2 text-2xl font-black tracking-[0.35em] text-purple-700">
+        {word.split("").map((letter, index) => (
+          <span key={`${letter}-${index}`} className="min-w-5 border-b-2 border-purple-300 text-center">
+            {guessed.includes(letter) || lost ? letter.toUpperCase() : ""}
+          </span>
+        ))}
+      </div>
+      <div className="flex flex-wrap justify-center gap-1.5">
+        {alphabet.map((letter) => (
+          <Button
+            key={letter}
+            type="button"
+            variant="outline"
+            size="sm"
+            disabled={guessed.includes(letter) || finished}
+            onClick={() => guessLetter(letter)}
+            className="h-9 w-9 p-0 uppercase text-purple-700"
+          >
+            {letter}
+          </Button>
+        ))}
+      </div>
+      <Button type="button" variant="outline" size="sm" onClick={reset} className="gap-2 border-purple-200 text-purple-700">
+        <RotateCcw className="h-4 w-4" />
+        New Word
+      </Button>
+    </div>
+  );
+}
+
 type RpsChoice = "rock" | "paper" | "scissors";
 const rpsChoices: RpsChoice[] = ["rock", "paper", "scissors"];
 const rpsEmoji: Record<RpsChoice, string> = { rock: "🪨", paper: "📄", scissors: "✂️" };
@@ -281,7 +337,7 @@ function RockPaperScissorsGame() {
 
 function ArcadeSection() {
   const [isOpen, setIsOpen] = useState(false);
-  const [selectedGame, setSelectedGame] = useState<"tic-tac-toe" | "rock-paper-scissors" | "guess-the-number" | "dice-duel" | null>(null);
+  const [selectedGame, setSelectedGame] = useState<"tic-tac-toe" | "rock-paper-scissors" | "guess-the-number" | "dice-duel" | "hangman" | null>(null);
 
   return (
     <section>
@@ -356,6 +412,18 @@ function ArcadeSection() {
                   <span className="block text-xs font-normal text-gray-600">Roll against AVI</span>
                 </span>
               </Button>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setSelectedGame("hangman")}
+                className="h-auto min-h-28 justify-start gap-3 rounded-2xl border-pink-200 bg-white p-5 text-left hover:bg-pink-50"
+              >
+                <span className="text-3xl">🔤</span>
+                <span>
+                  <span className="block font-bold text-gray-900">Hangman</span>
+                  <span className="block text-xs font-normal text-gray-600">Guess AVI's hidden word</span>
+                </span>
+              </Button>
             </div>
           ) : (
             <Card className="border-purple-200 bg-white shadow-sm">
@@ -367,7 +435,9 @@ function ArcadeSection() {
                       ? "Rock Paper Scissors"
                       : selectedGame === "guess-the-number"
                         ? "Guess the Number"
-                        : "Dice Duel"}
+                        : selectedGame === "dice-duel"
+                          ? "Dice Duel"
+                          : "Hangman"}
                 </CardTitle>
                 <Button type="button" variant="ghost" size="sm" onClick={() => setSelectedGame(null)} className="text-purple-700">
                   Back to games
@@ -380,8 +450,10 @@ function ArcadeSection() {
                   <RockPaperScissorsGame />
                 ) : selectedGame === "guess-the-number" ? (
                   <GuessTheNumberGame />
-                ) : (
+                ) : selectedGame === "dice-duel" ? (
                   <DiceDuelGame />
+                ) : (
+                  <HangmanGame />
                 )}
               </CardContent>
             </Card>
