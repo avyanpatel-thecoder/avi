@@ -317,6 +317,7 @@ function DinoDashGame() {
   const targetPositionRef = useRef(112);
   const targetClaimedRef = useRef(false);
   const scoreRef = useRef(0);
+  const jumpKeyHeldRef = useRef(false);
 
   const startGame = () => {
     obstaclePositionRef.current = 96;
@@ -331,6 +332,7 @@ function DinoDashGame() {
     setIsPlaying(true);
     setIsJumping(false);
     jumpingRef.current = false;
+    jumpKeyHeldRef.current = false;
   };
 
   const addScore = (points: number) => {
@@ -391,12 +393,23 @@ function DinoDashGame() {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.code === "Space" || event.code === "ArrowUp") {
         event.preventDefault();
+        if (event.repeat || jumpKeyHeldRef.current) return;
+        jumpKeyHeldRef.current = true;
         if (isPlaying) jump();
         else startGame();
       }
     };
+    const handleKeyUp = (event: KeyboardEvent) => {
+      if (event.code === "Space" || event.code === "ArrowUp") {
+        jumpKeyHeldRef.current = false;
+      }
+    };
     window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
+    window.addEventListener("keyup", handleKeyUp);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+      window.removeEventListener("keyup", handleKeyUp);
+    };
   }, [isPlaying]);
 
   return (
@@ -441,21 +454,31 @@ function DinoDashGame() {
           )}
         </div>
         <div
-          className={`absolute bottom-7 h-12 w-10 shadow-lg ${
-            obstacleType === "cactus"
-              ? "rounded-t-[45%] rounded-b-sm bg-[#263238]"
-              : obstacleType === "cactus-cluster"
-                ? "h-14 rounded-t-[45%] rounded-b-sm bg-[#263238]"
-                : "h-8 rounded-full bg-[#263238]"
-          }`}
+          className="absolute bottom-7 h-16 w-16 [image-rendering:pixelated]"
           style={{ left: `${obstaclePosition}%` }}
           aria-label="Obstacle"
         >
-          {(obstacleType === "cactus" || obstacleType === "cactus-cluster") && (
+          {obstacleType === "rock" ? (
             <>
-              <span className="absolute -left-3 top-4 h-2 w-4 rounded-l-full bg-[#263238]" />
-              <span className="absolute -left-2 top-1 h-5 w-2 rounded-t-full bg-[#263238]" />
-              {obstacleType === "cactus-cluster" && <span className="absolute -right-3 top-7 h-2 w-4 rounded-r-full bg-[#263238]" />}
+              <span className="absolute bottom-0 left-2 h-5 w-12 bg-[#263238]" />
+              <span className="absolute bottom-4 left-5 h-4 w-8 bg-[#263238]" />
+              <span className="absolute bottom-8 left-7 h-2 w-4 bg-[#263238]" />
+            </>
+          ) : (
+            <>
+              <span className="absolute bottom-0 left-7 h-16 w-4 bg-[#263238]" />
+              <span className="absolute bottom-7 left-2 h-3 w-9 bg-[#263238]" />
+              <span className="absolute bottom-9 left-2 h-7 w-4 bg-[#263238]" />
+              <span className="absolute bottom-11 left-10 h-3 w-8 bg-[#263238]" />
+              <span className="absolute bottom-11 left-13 h-7 w-4 bg-[#263238]" />
+              {obstacleType === "cactus-cluster" && (
+                <>
+                  <span className="absolute bottom-0 left-1 h-10 w-4 bg-[#263238]" />
+                  <span className="absolute bottom-6 left-0 h-3 w-7 bg-[#263238]" />
+                </>
+              )}
+              <span className="absolute bottom-2 left-8 h-1 w-1 bg-[#dce5df]" />
+              <span className="absolute bottom-7 left-8 h-1 w-1 bg-[#dce5df]" />
             </>
           )}
         </div>
