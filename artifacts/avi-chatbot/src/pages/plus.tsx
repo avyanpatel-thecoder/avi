@@ -54,6 +54,40 @@ function getGameResult(board: ArcadeCell[]): ArcadeCell | "draw" {
   return board.every(Boolean) ? "draw" : null;
 }
 
+function minimax(board: ArcadeCell[], maximizing: boolean): number {
+  const result = getGameResult(board);
+  if (result === "O") return 10;
+  if (result === "X") return -10;
+  if (result === "draw") return 0;
+
+  const scores = board
+    .map((cell, index) => {
+      if (cell) return null;
+      const next = [...board];
+      next[index] = maximizing ? "O" : "X";
+      return minimax(next, !maximizing);
+    })
+    .filter((score): score is number => score !== null);
+
+  return maximizing ? Math.max(...scores) : Math.min(...scores);
+}
+
+function getBestComputerMove(board: ArcadeCell[]): number {
+  let bestScore = -Infinity;
+  let bestIndex = board.findIndex((cell) => !cell);
+  board.forEach((cell, index) => {
+    if (cell) return;
+    const next = [...board];
+    next[index] = "O";
+    const score = minimax(next, false);
+    if (score > bestScore) {
+      bestScore = score;
+      bestIndex = index;
+    }
+  });
+  return bestIndex;
+}
+
 function TicTacToeGame() {
   const [board, setBoard] = useState<ArcadeCell[]>(Array(9).fill(null));
   const [result, setResult] = useState<ArcadeCell | "draw">(null);
@@ -74,10 +108,7 @@ function TicTacToeGame() {
       return;
     }
 
-    const openCells = playerBoard
-      .map((cell, cellIndex) => (cell ? -1 : cellIndex))
-      .filter((cellIndex) => cellIndex >= 0);
-    const computerIndex = openCells[Math.floor(Math.random() * openCells.length)];
+    const computerIndex = getBestComputerMove(playerBoard);
     if (computerIndex !== undefined) playerBoard[computerIndex] = "O";
     setBoard(playerBoard);
     setResult(getGameResult(playerBoard));
@@ -116,6 +147,48 @@ function TicTacToeGame() {
         </Button>
       </CardContent>
     </Card>
+  );
+}
+
+function GuessTheNumberGame() {
+  const [secret, setSecret] = useState(() => Math.floor(Math.random() * 20) + 1);
+  const [guess, setGuess] = useState("");
+  const [message, setMessage] = useState("AVI picked a number from 1 to 20.");
+
+  const submitGuess = (event: React.FormEvent) => {
+    event.preventDefault();
+    const value = Number(guess);
+    if (!Number.isInteger(value) || value < 1 || value > 20) {
+      setMessage("Pick a whole number from 1 to 20.");
+      return;
+    }
+    if (value === secret) {
+      setMessage("You got it! AVI picked a new number.");
+      setSecret(Math.floor(Math.random() * 20) + 1);
+    } else {
+      setMessage(value < secret ? "Go higher!" : "Go lower!");
+    }
+    setGuess("");
+  };
+
+  return (
+    <div className="flex w-full max-w-sm flex-col items-center gap-4">
+      <p className="text-center text-sm font-medium text-gray-600">{message}</p>
+      <form onSubmit={submitGuess} className="flex w-full items-center gap-2">
+        <Input
+          type="number"
+          min={1}
+          max={20}
+          value={guess}
+          onChange={(event) => setGuess(event.target.value)}
+          placeholder="Your guess"
+          aria-label="Your guess from 1 to 20"
+        />
+        <Button type="submit" className="bg-purple-600 text-white hover:bg-purple-700">
+          Guess
+        </Button>
+      </form>
+    </div>
   );
 }
 
@@ -172,7 +245,7 @@ function RockPaperScissorsGame() {
 
 function ArcadeSection() {
   const [isOpen, setIsOpen] = useState(false);
-  const [selectedGame, setSelectedGame] = useState<"tic-tac-toe" | "rock-paper-scissors" | null>(null);
+  const [selectedGame, setSelectedGame] = useState<"tic-tac-toe" | "rock-paper-scissors" | "guess-the-number" | null>(null);
 
   return (
     <section>
@@ -223,19 +296,41 @@ function ArcadeSection() {
                   <span className="block text-xs font-normal text-gray-600">Make your move</span>
                 </span>
               </Button>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setSelectedGame("guess-the-number")}
+                className="h-auto min-h-28 justify-start gap-3 rounded-2xl border-blue-200 bg-white p-5 text-left hover:bg-blue-50"
+              >
+                <span className="text-3xl">🎯</span>
+                <span>
+                  <span className="block font-bold text-gray-900">Guess the Number</span>
+                  <span className="block text-xs font-normal text-gray-600">Can you outguess AVI?</span>
+                </span>
+              </Button>
             </div>
           ) : (
             <Card className="border-purple-200 bg-white shadow-sm">
               <CardHeader className="flex flex-row items-center justify-between border-b border-purple-100">
                 <CardTitle className="text-purple-900">
-                  {selectedGame === "tic-tac-toe" ? "Tic-Tac-Toe" : "Rock Paper Scissors"}
+                  {selectedGame === "tic-tac-toe"
+                    ? "Tic-Tac-Toe"
+                    : selectedGame === "rock-paper-scissors"
+                      ? "Rock Paper Scissors"
+                      : "Guess the Number"}
                 </CardTitle>
                 <Button type="button" variant="ghost" size="sm" onClick={() => setSelectedGame(null)} className="text-purple-700">
                   Back to games
                 </Button>
               </CardHeader>
               <CardContent className="pt-6">
-                {selectedGame === "tic-tac-toe" ? <TicTacToeGame /> : <RockPaperScissorsGame />}
+                {selectedGame === "tic-tac-toe" ? (
+                  <TicTacToeGame />
+                ) : selectedGame === "rock-paper-scissors" ? (
+                  <RockPaperScissorsGame />
+                ) : (
+                  <GuessTheNumberGame />
+                )}
               </CardContent>
             </Card>
           )}
