@@ -294,16 +294,35 @@ function DinoDashGame() {
   const [isPlaying, setIsPlaying] = useState(false);
   const [isJumping, setIsJumping] = useState(false);
   const [obstaclePosition, setObstaclePosition] = useState(96);
+  const [targetPosition, setTargetPosition] = useState(112);
+  const [targetHeight, setTargetHeight] = useState(35);
+  const [obstacleType, setObstacleType] = useState<"crystal" | "spike" | "crate">("crystal");
   const [score, setScore] = useState(0);
   const [bestScore, setBestScore] = useState(() => Number(localStorage.getItem("avi_dino_best") || 0));
   const jumpingRef = useRef(false);
+  const obstaclePositionRef = useRef(96);
+  const targetPositionRef = useRef(112);
+  const targetClaimedRef = useRef(false);
+  const scoreRef = useRef(0);
 
   const startGame = () => {
+    obstaclePositionRef.current = 96;
+    targetPositionRef.current = 112;
+    targetClaimedRef.current = false;
+    scoreRef.current = 0;
     setObstaclePosition(96);
+    setTargetPosition(112);
+    setTargetHeight(35);
+    setObstacleType("crystal");
     setScore(0);
     setIsPlaying(true);
     setIsJumping(false);
     jumpingRef.current = false;
+  };
+
+  const addScore = (points: number) => {
+    scoreRef.current += points;
+    setScore(scoreRef.current);
   };
 
   const jump = () => {
@@ -319,26 +338,41 @@ function DinoDashGame() {
   useEffect(() => {
     if (!isPlaying) return;
     const timer = window.setInterval(() => {
-      setObstaclePosition((current) => {
-        const next = current - 2.8;
-        if (next <= 9) {
-          if (!jumpingRef.current) {
-            setIsPlaying(false);
-            setBestScore((currentBest) => {
-              const nextBest = Math.max(currentBest, score);
-              localStorage.setItem("avi_dino_best", String(nextBest));
-              return nextBest;
-            });
-            return current;
-          }
-          setScore((currentScore) => currentScore + 1);
-          return 96;
+      const nextObstacle = obstaclePositionRef.current - 2.8;
+      obstaclePositionRef.current = nextObstacle;
+      setObstaclePosition(nextObstacle);
+      if (nextObstacle <= 9) {
+        if (!jumpingRef.current) {
+          setIsPlaying(false);
+          setBestScore((currentBest) => {
+            const nextBest = Math.max(currentBest, scoreRef.current);
+            localStorage.setItem("avi_dino_best", String(nextBest));
+            return nextBest;
+          });
+          return;
         }
-        return next;
-      });
+        addScore(1);
+        obstaclePositionRef.current = 96;
+        setObstaclePosition(96);
+        setObstacleType(["crystal", "spike", "crate"][Math.floor(Math.random() * 3)] as "crystal" | "spike" | "crate");
+      }
+
+      const nextTarget = targetPositionRef.current - 2.8;
+      targetPositionRef.current = nextTarget;
+      setTargetPosition(nextTarget);
+      if (nextTarget <= 12 && !targetClaimedRef.current) {
+        if (jumpingRef.current) addScore(2);
+        targetClaimedRef.current = true;
+      }
+      if (nextTarget <= -10) {
+        targetPositionRef.current = 112;
+        targetClaimedRef.current = false;
+        setTargetPosition(112);
+        setTargetHeight(30 + Math.floor(Math.random() * 25));
+      }
     }, 80);
     return () => window.clearInterval(timer);
-  }, [isPlaying, score]);
+  }, [isPlaying]);
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -356,29 +390,52 @@ function DinoDashGame() {
     <div className="flex w-full max-w-xl flex-col items-center gap-4">
       <div className="flex w-full items-center justify-between rounded-xl bg-slate-900 px-4 py-2 text-xs font-bold text-white">
         <span>Score: {score}</span>
-        <span className="text-cyan-300">Best: {bestScore}</span>
+        <span className="text-amber-300">Best: {bestScore}</span>
       </div>
-      <div className="relative h-48 w-full overflow-hidden rounded-2xl border-2 border-cyan-300/40 bg-gradient-to-b from-sky-400 to-indigo-700 shadow-inner">
-        <div className="absolute right-5 top-5 text-2xl opacity-80">✦</div>
-        <div className="absolute left-8 top-8 text-xl opacity-70">✧</div>
-        <div className="absolute bottom-0 left-0 h-7 w-full bg-slate-950/80" />
+      <div className="relative h-60 w-full overflow-hidden rounded-2xl border-2 border-cyan-300/40 bg-gradient-to-b from-sky-400 via-indigo-600 to-violet-900 shadow-inner">
+        <div className="absolute right-8 top-6 h-10 w-10 rounded-full bg-amber-200/80 shadow-[0_0_30px_rgba(253,230,138,0.7)]" />
+        <div className="absolute left-8 top-9 h-2 w-16 rounded-full bg-white/35 shadow-[18px_8px_0_2px_rgba(255,255,255,0.2)]" />
+        <div className="absolute bottom-7 left-0 h-10 w-full bg-slate-950/80" />
+        <div className="absolute bottom-7 left-[8%] h-5 w-20 rounded-t-full border-t-2 border-cyan-300/30" />
+        <div className="absolute bottom-7 right-[10%] h-7 w-28 rounded-t-full border-t-2 border-cyan-300/30" />
         <div
-          className={`absolute bottom-7 left-[10%] flex h-12 w-12 items-center justify-center rounded-xl bg-cyan-300 text-2xl shadow-lg transition-[bottom] duration-300 ${
+          className="absolute h-10 w-10 rounded-full border-4 border-amber-200 bg-amber-400/30 shadow-[0_0_18px_rgba(253,230,138,0.9)]"
+          style={{ left: `${targetPosition}%`, top: `${targetHeight}%` }}
+          aria-label="Flying target"
+        >
+          <span className="absolute inset-2 rounded-full bg-amber-100" />
+        </div>
+        <div
+          className={`absolute bottom-7 left-[9%] h-14 w-16 transition-[bottom] duration-300 ${
             isJumping ? "bottom-24" : ""
           }`}
           aria-label="AVI runner"
         >
-          🦕
+          <span className="absolute bottom-0 left-2 h-9 w-12 rounded-[45%_55%_35%_40%] bg-cyan-300 shadow-lg" />
+          <span className="absolute bottom-6 left-8 h-8 w-9 rounded-[45%_55%_45%_35%] bg-cyan-200" />
+          <span className="absolute bottom-10 left-10 h-2 w-2 rounded-full bg-slate-950" />
+          <span className="absolute bottom-1 left-4 h-5 w-2 rounded-full bg-cyan-400" />
+          <span className="absolute bottom-1 left-11 h-5 w-2 rounded-full bg-cyan-400" />
+          <span className="absolute bottom-5 left-0 h-2 w-5 -rotate-12 rounded-full bg-cyan-300" />
+          <span className="absolute bottom-8 left-2 h-2 w-4 rotate-12 rounded-full bg-cyan-300" />
         </div>
         <div
-          className="absolute bottom-7 h-12 w-8 rounded-lg bg-orange-400 shadow-lg"
+          className={`absolute bottom-7 h-12 w-10 shadow-lg ${
+            obstacleType === "crystal"
+              ? "rotate-45 rounded-lg bg-fuchsia-400 ring-4 ring-fuchsia-200/30"
+              : obstacleType === "spike"
+                ? "rounded-t-[100%] rounded-b-md bg-orange-400"
+                : "rounded-lg border-4 border-amber-200 bg-amber-500"
+          }`}
           style={{ left: `${obstaclePosition}%` }}
           aria-label="Obstacle"
-        />
+        >
+          {obstacleType === "crate" && <span className="absolute inset-1 rotate-45 border-l-2 border-t-2 border-amber-100/70" />}
+        </div>
         {!isPlaying && (
           <div className="absolute inset-0 flex flex-col items-center justify-center bg-slate-950/45 text-center text-white">
             <p className="text-lg font-black">{score > 0 ? "Game over!" : "AVI Dino Dash"}</p>
-            <p className="mt-1 text-xs text-white/80">Jump over the obstacles</p>
+            <p className="mt-1 text-xs text-white/80">Jump obstacles and hit flying targets</p>
           </div>
         )}
       </div>
