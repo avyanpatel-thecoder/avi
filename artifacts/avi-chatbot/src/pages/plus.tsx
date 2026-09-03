@@ -192,6 +192,42 @@ function GuessTheNumberGame() {
   );
 }
 
+function DiceDuelGame() {
+  const [playerRoll, setPlayerRoll] = useState<number | null>(null);
+  const [aviRoll, setAviRoll] = useState<number | null>(null);
+  const [result, setResult] = useState("Roll the dice!");
+  const diceFaces = ["⚀", "⚁", "⚂", "⚃", "⚄", "⚅"];
+
+  const rollDice = () => {
+    const player = Math.floor(Math.random() * 6) + 1;
+    const avi = Math.floor(Math.random() * 6) + 1;
+    setPlayerRoll(player);
+    setAviRoll(avi);
+    setResult(player === avi ? "It's a draw!" : player > avi ? "You win!" : "AVI wins!");
+  };
+
+  return (
+    <div className="flex flex-col items-center gap-4">
+      <div className="flex items-center gap-8 text-center">
+        <div>
+          <p className="mb-1 text-xs font-semibold text-gray-500">You</p>
+          <span className="text-5xl">{playerRoll ? diceFaces[playerRoll - 1] : "🎲"}</span>
+        </div>
+        <span className="text-sm font-bold text-gray-400">VS</span>
+        <div>
+          <p className="mb-1 text-xs font-semibold text-gray-500">AVI</p>
+          <span className="text-5xl">{aviRoll ? diceFaces[aviRoll - 1] : "🎲"}</span>
+        </div>
+      </div>
+      <p className="text-sm font-bold text-purple-700">{result}</p>
+      <Button type="button" onClick={rollDice} className="gap-2 bg-purple-600 text-white hover:bg-purple-700">
+        <RotateCcw className="h-4 w-4" />
+        Roll Dice
+      </Button>
+    </div>
+  );
+}
+
 type RpsChoice = "rock" | "paper" | "scissors";
 const rpsChoices: RpsChoice[] = ["rock", "paper", "scissors"];
 const rpsEmoji: Record<RpsChoice, string> = { rock: "🪨", paper: "📄", scissors: "✂️" };
@@ -245,7 +281,7 @@ function RockPaperScissorsGame() {
 
 function ArcadeSection() {
   const [isOpen, setIsOpen] = useState(false);
-  const [selectedGame, setSelectedGame] = useState<"tic-tac-toe" | "rock-paper-scissors" | "guess-the-number" | null>(null);
+  const [selectedGame, setSelectedGame] = useState<"tic-tac-toe" | "rock-paper-scissors" | "guess-the-number" | "dice-duel" | null>(null);
 
   return (
     <section>
@@ -308,6 +344,18 @@ function ArcadeSection() {
                   <span className="block text-xs font-normal text-gray-600">Can you outguess AVI?</span>
                 </span>
               </Button>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setSelectedGame("dice-duel")}
+                className="h-auto min-h-28 justify-start gap-3 rounded-2xl border-emerald-200 bg-white p-5 text-left hover:bg-emerald-50"
+              >
+                <span className="text-3xl">🎲</span>
+                <span>
+                  <span className="block font-bold text-gray-900">Dice Duel</span>
+                  <span className="block text-xs font-normal text-gray-600">Roll against AVI</span>
+                </span>
+              </Button>
             </div>
           ) : (
             <Card className="border-purple-200 bg-white shadow-sm">
@@ -317,7 +365,9 @@ function ArcadeSection() {
                     ? "Tic-Tac-Toe"
                     : selectedGame === "rock-paper-scissors"
                       ? "Rock Paper Scissors"
-                      : "Guess the Number"}
+                      : selectedGame === "guess-the-number"
+                        ? "Guess the Number"
+                        : "Dice Duel"}
                 </CardTitle>
                 <Button type="button" variant="ghost" size="sm" onClick={() => setSelectedGame(null)} className="text-purple-700">
                   Back to games
@@ -328,8 +378,10 @@ function ArcadeSection() {
                   <TicTacToeGame />
                 ) : selectedGame === "rock-paper-scissors" ? (
                   <RockPaperScissorsGame />
-                ) : (
+                ) : selectedGame === "guess-the-number" ? (
                   <GuessTheNumberGame />
+                ) : (
+                  <DiceDuelGame />
                 )}
               </CardContent>
             </Card>
